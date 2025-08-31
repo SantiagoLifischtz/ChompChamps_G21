@@ -28,8 +28,8 @@ typedef struct {
 } game_state_t;
 
 typedef struct {
-    sem_t A; // master -> vista
-    sem_t B; // vista -> master
+    sem_t A; // master -> vista: hay cambios
+    sem_t B; // vista -> master: ya imprimí
 } game_sync_t;
 // -----------------------
 
@@ -79,14 +79,23 @@ int main() {
         pid_t pid = fork();
         if (pid == 0) {
             // hijo = jugador
-            close(pipes[i][0]);
-            dup2(pipes[i][1], STDOUT_FILENO);
-            execl("./build/jugador", "jugador", NULL);
-            perror("execl jugador");
-            exit(1);
-        } else {
+            close(pipes[i][0]);                     // cierro lectura
+            dup2(pipes[i][1], STDOUT_FILENO);       // stdout → escritura del pipe
+
+            if (i == 0) {
+                execl("./build/jugador1", "jugador1", NULL);
+                perror("execl jugador1");
+            } else if (i == 1) {
+                execl("./build/jugador2", "jugador2", NULL);
+                perror("execl jugador2");
+            }
+            exit(1); // solo llega si execl falla
+        } else if (pid > 0) {
             jugadores[i] = pid;
-            close(pipes[i][1]);
+            close(pipes[i][1]); // master no escribe en este pipe
+        } else {
+            perror("fork jugador");
+            exit(1);
         }
     }
 

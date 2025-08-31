@@ -1,16 +1,21 @@
 CC=gcc
 CFLAGS=-Wall -Wextra -std=c11 -g
+BUILD=build
+SRC=src
 
-all: master jugador vista
+all: $(BUILD)/master $(BUILD)/jugador1 $(BUILD)/jugador2 $(BUILD)/vista
 
-master: src/master.c
-	$(CC) $(CFLAGS) -o build/master src/master.c -lrt -pthread
+$(BUILD)/master: $(SRC)/master.c
+	$(CC) $(CFLAGS) -o $@ $< -lrt -pthread
 
-jugador: src/jugador.c
-	$(CC) $(CFLAGS) -o build/jugador src/jugador.c
+$(BUILD)/jugador1: $(SRC)/jugador1.c
+	$(CC) $(CFLAGS) -o $@ $<
 
-vista: src/vista.c
-	$(CC) $(CFLAGS) -o build/vista src/vista.c -lrt -pthread
+$(BUILD)/jugador2: $(SRC)/jugador2.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+$(BUILD)/vista: $(SRC)/vista.c
+	$(CC) $(CFLAGS) -o $@ $< -lrt -pthread
 
 clean:
-	rm -f build/master build/jugador build/vista
+	rm -f $(BUILD)/*
