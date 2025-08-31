@@ -59,8 +59,8 @@ int main() {
     // jugadores iniciales
     state->jugadores[0].x = 0; state->jugadores[0].y = 0;
     state->jugadores[1].x = 9; state->jugadores[1].y = 9;
-    state->tablero[0][0] = -0;
-    state->tablero[9][9] = -1;
+    state->tablero[0][0] = -1;  // Player 0 represented as -1
+    state->tablero[9][9] = -2;  // Player 1 represented as -2
     for (int i=0; i<NUM_JUGADORES; i++) state->jugadores[i].puntaje = 0;
 
     // ----- shm sync -----
@@ -127,7 +127,14 @@ int main() {
                 // actualizar puntaje y tablero
                 int reward = state->tablero[ny][nx];
                 if (reward > 0) state->jugadores[i].puntaje += reward;
-                state->tablero[ny][nx] = -i;
+                
+                // Marcar antigua posición como visitada (si era posición actual)
+                if (state->tablero[y][x] == -(i+1)) {
+                    state->tablero[y][x] = -(i+11);  // Visitada: -11 para jugador 0, -12 para jugador 1
+                }
+                
+                // Marcar nueva posición como posición actual del jugador
+                state->tablero[ny][nx] = -(i+1);  // Actual: -1 para jugador 0, -2 para jugador 1
                 state->jugadores[i].x = nx;
                 state->jugadores[i].y = ny;
 

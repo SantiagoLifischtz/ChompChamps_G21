@@ -62,7 +62,30 @@ int main() {
                 int val = state->tablero[y][x];
                 if (val > 0) printf("%d", val);
                 else if (val == 0) printf(".");
-                else printf("%c", 'A' + (-val));
+                else {
+                    if (val <= -11) {
+                        // Posiciones visitadas: mostrar puntos coloreados
+                        int player_id = (-val) - 11;  // Convertir -11,-12 a 0,1
+                        if (player_id == 0) {
+                            printf("\033[34m.\033[0m");  // Punto azul para el recorrido del jugador A
+                        } else if (player_id == 1) {
+                            printf("\033[31m.\033[0m");  // Punto rojo para el recorrido del jugador B
+                        } else {
+                            printf(".");  // Fallback
+                        }
+                    } else {
+                        // Posiciones actuales: mostrar letras coloreadas
+                        int player_id = (-val) - 1;  // Convertir -1,-2 a 0,1
+                        char player_char = 'A' + player_id;
+                        if (player_char == 'A') {
+                            printf("\033[34m%c\033[0m", player_char);  // A azul
+                        } else if (player_char == 'B') {
+                            printf("\033[31m%c\033[0m", player_char);  // B rojo
+                        } else {
+                            printf("%c", player_char);  // Fallback para otros jugadores
+                        }
+                    }
+                }
             }
             printf("\n");
         }
