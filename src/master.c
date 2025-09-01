@@ -1,4 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
+#define _DEFAULT_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -316,10 +317,10 @@ int main(int argc, char *argv[]) {
         time_t current_time = time(NULL);
         long remaining_timeout = config.timeout - (current_time - last_movement_time);
         
+        // Si no queda tiempo, usar timeout de 0 para que select retorne inmediatamente
         if (remaining_timeout <= 0) {
-            printf("[Master] Timeout global alcanzado (%ld segundos sin movimientos, límite: %d)\n", 
-                   current_time - last_movement_time, config.timeout);
-            break;
+            printf("[Debug] No time left, forcing immediate timeout\n");
+            remaining_timeout = 0;
         }
         
         // Usar el tiempo restante como timeout para select
@@ -332,9 +333,8 @@ int main(int argc, char *argv[]) {
             break;
         } else if (ready == 0) {
             // Timeout - no hay movimientos en el tiempo esperado
-            time_t current_time_for_msg = time(NULL);
             printf("[Master] Timeout global alcanzado (%ld segundos sin movimientos, límite: %d)\n", 
-                   current_time_for_msg - last_movement_time, config.timeout);
+                   current_time - last_movement_time, config.timeout);
             break;
         }
         
