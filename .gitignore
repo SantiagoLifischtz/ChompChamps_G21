@@ -54,3 +54,5 @@ dkms.conf
 # Build files
 build/
 *.pdf
+
+.vscode/

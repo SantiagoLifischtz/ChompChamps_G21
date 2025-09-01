@@ -23,7 +23,7 @@
 #define DEFAULT_WIDTH 10
 #define DEFAULT_HEIGHT 10
 #define DEFAULT_DELAY 200
-#define DEFAULT_TIMEOUT 10
+#define DEFAULT_TIMEOUT 2
 
 // ----- estructuras -----
 typedef struct {
