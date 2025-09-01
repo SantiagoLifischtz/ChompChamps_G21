@@ -6,8 +6,8 @@
 #include <unistd.h>
 #include <semaphore.h>
 
-#define MAX_WIDTH 10
-#define MAX_HEIGHT 10
+#define MAX_WIDTH 100
+#define MAX_HEIGHT 100
 
 typedef struct {
     unsigned int puntaje;
@@ -18,7 +18,7 @@ typedef struct {
     unsigned short width;
     unsigned short height;
     unsigned int num_jugadores;
-    jugador_t jugadores[2];
+    jugador_t jugadores[9]; // Soporte para hasta 9 jugadores
     int terminado;
     int tablero[MAX_HEIGHT][MAX_WIDTH];
 } game_state_t;
@@ -56,33 +56,35 @@ int main() {
                    state->jugadores[i].y);
         }
 
-        printf("\nTablero:\n");
+        printf("\nTablero:\n");        
         for (int y=0; y<state->height; y++) {
             for (int x=0; x<state->width; x++) {
                 int val = state->tablero[y][x];
-                if (val > 0) printf("%d", val);
-                else if (val == 0) printf(".");
+
+                if (val > 0) printf("%d ", val);
+                else if (val == 0) printf(". ");
                 else {
                     if (val <= -11) {
                         // Posiciones visitadas: mostrar puntos coloreados
-                        int player_id = (-val) - 11;  // Convertir -11,-12 a 0,1
-                        if (player_id == 0) {
-                            printf("\033[34m.\033[0m");  // Punto azul para el recorrido del jugador A
-                        } else if (player_id == 1) {
-                            printf("\033[31m.\033[0m");  // Punto rojo para el recorrido del jugador B
+                        int player_id = (-val) - 11;  // Convertir -11,-12,etc a 0,1,etc
+                        const char* colors[] = {"\033[34m", "\033[31m", "\033[32m", "\033[33m", 
+                                              "\033[35m", "\033[36m", "\033[37m", "\033[90m", "\033[93m"};
+                        if (player_id >= 0 && player_id < 9) {
+                            printf("%s.\033[0m ", colors[player_id]);
                         } else {
-                            printf(".");  // Fallback
+                            printf(". ");  // Fallback
                         }
                     } else {
                         // Posiciones actuales: mostrar letras coloreadas
-                        int player_id = (-val) - 1;  // Convertir -1,-2 a 0,1
-                        char player_char = 'A' + player_id;
-                        if (player_char == 'A') {
-                            printf("\033[34m%c\033[0m", player_char);  // A azul
-                        } else if (player_char == 'B') {
-                            printf("\033[31m%c\033[0m", player_char);  // B rojo
+                        int player_id = (-val) - 1;  // Convertir -1,-2,etc a 0,1,etc
+                        if (player_id >= 0 && player_id < 9) {
+                            char player_char = 'A' + player_id;
+                            const char* colors[] = {"\033[34m", "\033[31m", "\033[32m", "\033[33m", 
+                                                  "\033[35m", "\033[36m", "\033[37m", "\033[90m", "\033[93m"};
+
+                            printf("%s%c\033[0m ", colors[player_id], player_char);
                         } else {
-                            printf("%c", player_char);  // Fallback para otros jugadores
+                            printf("? ");  // Fallback para jugadores fuera de rango
                         }
                     }
                 }
