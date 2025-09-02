@@ -10,6 +10,18 @@
 #define MAX_WIDTH 100
 #define MAX_HEIGHT 100
 
+void printAnimatedBar(int length, int frame) {
+    // Barra animada para mostrar que el juego sigue corriendo
+    frame = ((frame % length) + length) % length;
+    for (int i = 0; i < length; i++)
+    {
+        if (i != frame) putchar('=');
+        else putchar('|');
+        putchar(' ');
+    }
+    putchar('\n');
+}
+
 int main() {
     int shm_state_fd = shm_open("/game_state", O_RDWR, 0666);
     game_state_t *state = mmap(NULL, sizeof(game_state_t),
@@ -23,6 +35,8 @@ int main() {
 
     printf("[Vista] iniciada.\n");
     fflush(stdout);
+
+    int frameCounter = 0;
 
     while (1) {
         sem_wait(&sync->A);
@@ -38,7 +52,7 @@ int main() {
                    state->jugadores[i].y);
         }
 
-        printf("\nTablero:\n");        
+        printAnimatedBar(state->width,-frameCounter);
         for (int y=0; y<state->height; y++) {
             for (int x=0; x<state->width; x++) {
                 int val = state->tablero[y][x];
@@ -73,7 +87,7 @@ int main() {
             }
             printf("\n");
         }
-        printf("====\n");
+        printAnimatedBar(state->width,frameCounter++);
         fflush(stdout);
 
         sem_post(&sync->B);

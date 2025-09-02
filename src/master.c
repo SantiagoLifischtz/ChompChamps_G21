@@ -396,14 +396,13 @@ int main(int argc, char *argv[]) {
             } else {
                 // Movimiento inválido - mantener posición actual
                 // No hacer nada, el jugador se queda donde está
-                printf("[Master] Jugador %d intentó moverse a posición ocupada (%d,%d)\n", i, nx, ny);
+                //printf("[Master] Jugador %d intentó moverse a posición ocupada (%d,%d)\n", i, nx, ny);
             }
-
-            // avisar a vista (solo si hay vista activa)
-            if (config.view_path != NULL) {
-                sem_post(&sync->A);
-                sem_wait(&sync->B);
-            }
+        }
+        // avisar a vista (solo si hay vista activa)
+        if (config.view_path != NULL) {
+            sem_post(&sync->A);
+            sem_wait(&sync->B);
         }
         steps++;
         
