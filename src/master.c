@@ -302,6 +302,7 @@ int main(int argc, char *argv[]) {
         if (remaining_timeout <= 0) {
             printf("[Debug] No time left, forcing immediate timeout\n");
             remaining_timeout = 0;
+            break;
         }
         
         // Usar el tiempo restante como timeout para select
@@ -335,7 +336,7 @@ int main(int argc, char *argv[]) {
             }
             
             // ¡Movimiento recibido! Actualizar tiempo global
-            last_movement_time = time(NULL);
+            // last_movement_time = time(NULL);
             
             unsigned short x = state->jugadores[i].x;
             unsigned short y = state->jugadores[i].y;
@@ -393,6 +394,8 @@ int main(int argc, char *argv[]) {
                 state->tablero[ny][nx] = -(i+1);  // Actual: -1 para jugador 0, -2 para jugador 1
                 state->jugadores[i].x = nx;
                 state->jugadores[i].y = ny;
+
+                last_movement_time = time(NULL);
             } else {
                 // Movimiento inválido - mantener posición actual
                 // No hacer nada, el jugador se queda donde está

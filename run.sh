@@ -1,3 +1,3 @@
 make clean all
 cd build
-./master -v vista -d 20 -p player_random player_random player_random player_random $@
+./master -v vista -p player_random player_random player_random player_random $@
