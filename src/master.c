@@ -13,6 +13,7 @@
 #include <string.h>
 #include <sys/select.h>
 #include <signal.h>
+#include "structs.h"
 
 #define MAX_JUGADORES 9
 #define MIN_JUGADORES 1
@@ -25,26 +26,6 @@
 #define DEFAULT_HEIGHT 10
 #define DEFAULT_DELAY 200
 #define DEFAULT_TIMEOUT 2
-
-// ----- estructuras -----
-typedef struct {
-    unsigned int puntaje;
-    unsigned short x, y;  // posición actual
-} jugador_t;
-
-typedef struct {
-    unsigned short width;
-    unsigned short height;
-    unsigned int num_jugadores;
-    jugador_t jugadores[MAX_JUGADORES];
-    int terminado;
-    int tablero[MAX_HEIGHT][MAX_WIDTH];
-} game_state_t;
-
-typedef struct {
-    sem_t A; // master -> vista: hay cambios
-    sem_t B; // vista -> master: ya imprimí
-} game_sync_t;
 
 // Estructura para parámetros de configuración
 typedef struct {

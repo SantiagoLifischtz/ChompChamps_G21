@@ -5,28 +5,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <semaphore.h>
+#include "structs.h"
 
 #define MAX_WIDTH 100
 #define MAX_HEIGHT 100
-
-typedef struct {
-    unsigned int puntaje;
-    unsigned short x, y;
-} jugador_t;
-
-typedef struct {
-    unsigned short width;
-    unsigned short height;
-    unsigned int num_jugadores;
-    jugador_t jugadores[9]; // Soporte para hasta 9 jugadores
-    int terminado;
-    int tablero[MAX_HEIGHT][MAX_WIDTH];
-} game_state_t;
-
-typedef struct {
-    sem_t A;
-    sem_t B;
-} game_sync_t;
 
 int main() {
     int shm_state_fd = shm_open("/game_state", O_RDWR, 0666);
