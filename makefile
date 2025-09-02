@@ -1,21 +1,17 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -std=c11 -g
+CFLAGS=-Wall -Wextra -std=c99 -g
 BUILD=build
 SRC=src
+PLAYERS_SRC=$(wildcard $(SRC)/players/*.c)
+PLAYERS_BIN=$(patsubst $(SRC)/players/%.c,$(BUILD)/%,$(PLAYERS_SRC))
 
-all: $(BUILD)/master $(BUILD)/jugador1 $(BUILD)/jugador2 $(BUILD)/jugador3 $(BUILD)/vista
+all: $(BUILD)/master $(BUILD)/vista $(PLAYERS_BIN)
+
+$(PLAYERS_BIN): $(BUILD)/%: $(SRC)/players/%.c
+	$(CC) $(CFLAGS) -o $@ $<
 
 $(BUILD)/master: $(SRC)/master.c
 	$(CC) $(CFLAGS) -o $@ $< -lrt -pthread
-
-$(BUILD)/jugador1: $(SRC)/jugador1.c
-	$(CC) $(CFLAGS) -o $@ $<
-
-$(BUILD)/jugador2: $(SRC)/jugador2.c
-	$(CC) $(CFLAGS) -o $@ $<
-
-$(BUILD)/jugador3: $(SRC)/jugador3.c
-	$(CC) $(CFLAGS) -o $@ $<
 
 $(BUILD)/vista: $(SRC)/vista.c
 	$(CC) $(CFLAGS) -o $@ $< -lrt -pthread
