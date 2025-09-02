@@ -237,6 +237,7 @@ int main(int argc, char *argv[]) {
             exit(1); // solo llega si execl falla
         } else if (pid > 0) {
             jugadores[i] = pid;
+            state->jugadores[i].pid = pid;
             close(pipes[i][1]); // master no escribe en este pipe
         } else {
             perror("fork jugador");
@@ -384,6 +385,7 @@ int main(int argc, char *argv[]) {
                 // Movimiento válido - actualizar puntaje y tablero
                 int reward = destino_valor;
                 if (reward > 0) state->jugadores[i].puntaje += reward;
+                state->jugadores[i].validRequests++;
                 
                 // Marcar antigua posición como visitada (si era posición actual)
                 if (state->tablero[y][x] == -(i+1)) {
@@ -398,8 +400,7 @@ int main(int argc, char *argv[]) {
                 last_movement_time = time(NULL);
             } else {
                 // Movimiento inválido - mantener posición actual
-                // No hacer nada, el jugador se queda donde está
-                //printf("[Master] Jugador %d intentó moverse a posición ocupada (%d,%d)\n", i, nx, ny);
+                state->jugadores[i].invalidRequests++;
             }
         }
         // avisar a vista (solo si hay vista activa)
