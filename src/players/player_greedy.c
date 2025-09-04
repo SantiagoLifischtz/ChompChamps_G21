@@ -1,30 +1,12 @@
+#define _DEFAULT_SOURCE
 #include <stdio.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <sys/mman.h>
 #include <unistd.h>
-#include <structs.h>
-
-// TODO: mover a libreria para todos los players
-jugador_t *getPlayer(game_state_t *state, pid_t playerPid) {
-    for (size_t i = 0; i < state->num_jugadores; i++)
-    {
-        if (state->jugadores[i].pid == playerPid) {
-            return &(state->jugadores[i]);
-        }
-    }
-    return NULL;
-}
+#include <playerlib.h>
 
 int main() {
-    int stateFd = shm_open("/game_state", O_RDONLY, 0666);
-    game_state_t *state = mmap(NULL, sizeof(game_state_t), PROT_READ, MAP_SHARED, stateFd, 0);
+    game_state_t *state = getState();
     jugador_t *playerData = getPlayer(state, getpid());
-    char moveMap[3][3] = {
-        {7,0,1},
-        {6,8,2},
-        {5,4,3}
-    };
+    char (*moveMap)[3] = getMoveMap();
 
     while(1) {
 

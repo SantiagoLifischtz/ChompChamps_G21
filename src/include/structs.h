@@ -1,3 +1,6 @@
+#ifndef STRUCTS_H
+#define STRUCTS_H
+
 #include <stdlib.h>
 #include <sys/types.h>
 #include <semaphore.h>
@@ -35,3 +38,5 @@ typedef struct {
     unsigned int F; // Cantidad de jugadores leyendo el estado
     sem_t G[9]; // Le indican a cada jugador que puede enviar 1 movimiento
 } game_sync_t;
+
+#endif

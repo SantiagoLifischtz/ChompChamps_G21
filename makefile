@@ -7,8 +7,11 @@ PLAYERS_BIN=$(patsubst $(SRC)/players/%.c,$(BUILD)/%,$(PLAYERS_SRC))
 
 all: $(BUILD)/master $(BUILD)/vista $(PLAYERS_BIN)
 
-$(PLAYERS_BIN): $(BUILD)/%: $(SRC)/players/%.c
-	$(CC) $(CFLAGS) -o $@ $<
+$(BUILD)/playerlib.o: $(SRC)/playerlib.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(PLAYERS_BIN): $(BUILD)/%: $(SRC)/players/%.c $(BUILD)/playerlib.o
+	$(CC) $(CFLAGS) -o $@ $< $(BUILD)/playerlib.o
 
 $(BUILD)/master: $(SRC)/master.c
 	$(CC) $(CFLAGS) -o $@ $< -lrt -pthread
