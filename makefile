@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -std=c99 -g
+CFLAGS=-Wall -Wextra -std=c99 -g -Isrc/include
 BUILD=build
 SRC=src
 PLAYERS_SRC=$(wildcard $(SRC)/players/*.c)

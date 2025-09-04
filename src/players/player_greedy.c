@@ -3,7 +3,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include "../structs.h"
+#include <structs.h>
 
 // TODO: mover a libreria para todos los players
 jugador_t *getPlayer(game_state_t *state, pid_t playerPid) {
@@ -17,8 +17,8 @@ jugador_t *getPlayer(game_state_t *state, pid_t playerPid) {
 }
 
 int main() {
-    int fd = shm_open("/game_state", O_RDONLY, 0666);
-    game_state_t *state = mmap(NULL, sizeof(game_state_t), PROT_READ, MAP_SHARED, fd, 0);
+    int stateFd = shm_open("/game_state", O_RDONLY, 0666);
+    game_state_t *state = mmap(NULL, sizeof(game_state_t), PROT_READ, MAP_SHARED, stateFd, 0);
     jugador_t *playerData = getPlayer(state, getpid());
     char moveMap[3][3] = {
         {7,0,1},

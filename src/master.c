@@ -13,7 +13,7 @@
 #include <string.h>
 #include <sys/select.h>
 #include <signal.h>
-#include "structs.h"
+#include <structs.h>
 
 #define MAX_JUGADORES 9
 #define MIN_JUGADORES 1

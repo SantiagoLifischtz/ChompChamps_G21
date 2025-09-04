@@ -5,7 +5,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <semaphore.h>
-#include "structs.h"
+#include <structs.h>
 
 #define MAX_WIDTH 100
 #define MAX_HEIGHT 100
@@ -52,7 +52,7 @@ int main() {
                    state->jugadores[i].y);
         }
 
-        printAnimatedBar(state->width,-frameCounter);
+        printAnimatedBar(state->width,-1-frameCounter);
         for (int y=0; y<state->height; y++) {
             for (int x=0; x<state->width; x++) {
                 int val = state->tablero[y][x];
