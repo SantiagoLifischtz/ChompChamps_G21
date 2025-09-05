@@ -5,10 +5,21 @@
 
 int main() {
     game_state_t *state = getState();
-    jugador_t *playerData = getPlayer(state, getpid());
+    game_sync_t *sync = getSync();
+    int playerListIndex;
+    jugador_t *playerData = getPlayer(state, getpid(), &playerListIndex);
     char (*moveMap)[3] = getMoveMap();
 
     while(1) {
+
+        sem_wait(&(sync->G[playerListIndex]));
+
+        sem_wait(&sync->C);
+        sem_wait(&sync->E);
+        sync->F++;
+        if (sync->F == 1) sem_wait(&sync->D);
+        sem_post(&sync->E);
+        sem_post(&sync->C);
 
         // Busca el lugar con mas puntaje
         int max = 0;
@@ -31,10 +42,15 @@ int main() {
                 }
             }
         }
+
+        sem_wait(&sync->E);
+        sync->F--;
+        if (sync->F == 0) sem_post(&sync->D);
+        sem_post(&sync->E);
         
         unsigned char move = moveMap[moveY+1][moveX+1];
         write(STDOUT_FILENO, &move, sizeof(move));
-        sleep(1); // Hasta que haya sincronizacion con el master
+        // sleep(1); // Hasta que haya sincronizacion con el master
         // Necesita leer el game state correctamente antes de cada movimiento
     }
     return 0;

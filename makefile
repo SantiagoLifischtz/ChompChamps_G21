@@ -1,7 +1,7 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -std=c99 -g -Isrc/include
-BUILD=build
 SRC=src
+CFLAGS=-Wall -Wextra -std=c99 -g -I$(SRC)/include
+BUILD=build
 PLAYERS_SRC=$(wildcard $(SRC)/players/*.c)
 PLAYERS_BIN=$(patsubst $(SRC)/players/%.c,$(BUILD)/%,$(PLAYERS_SRC))
 

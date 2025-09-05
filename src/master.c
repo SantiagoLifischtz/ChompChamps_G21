@@ -213,12 +213,18 @@ int main(int argc, char *argv[]) {
     // ----- shm sync -----
     int shm_sync_fd = shm_open("/game_sync", O_CREAT | O_RDWR, 0666);
     ftruncate(shm_sync_fd, sizeof(game_sync_t));
-    game_sync_t *sync = mmap(NULL, sizeof(game_sync_t),
-                             PROT_READ | PROT_WRITE, MAP_SHARED,
-                             shm_sync_fd, 0);
+    game_sync_t *sync = mmap(NULL, sizeof(game_sync_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm_sync_fd, 0);
 
     sem_init(&sync->A, 1, 0);
     sem_init(&sync->B, 1, 0);
+
+    sem_init(&sync->C, 1, 1);
+    sem_init(&sync->D, 1, 1);
+    sem_init(&sync->E, 1, 1);
+    sync->F = 0;
+    for (int i = 0; i < config.num_players; i++) {
+        sem_init(&(sync->G[i]), 1, 0);
+    }
 
     // ----- pipes + jugadores -----
     for (int i = 0; i < config.num_players; i++) {
@@ -254,26 +260,31 @@ int main(int argc, char *argv[]) {
             exit(1);
         }
         
-        // Dar tiempo a la vista para inicializarse
-        sleep(1);
-        
         // Enviar estado inicial a la vista
 
         sem_post(&sync->A);
         sem_wait(&sync->B);
     }
 
+    sleep(1);
+
     // ----- bucle master -----
     int steps = 0;
     int active_players[MAX_JUGADORES]; // Array para rastrear jugadores activos
-    
+
     // Inicializar todos los jugadores como activos
     for (int i = 0; i < config.num_players; i++) {
         active_players[i] = 1;
+        sem_post(&(sync->G[i]));
+        printf("\n");
     }
 
     time_t last_movement_time = time(NULL); // Tiempo del último movimiento de cualquier jugador    
     while (!state->terminado) {
+
+        sem_wait(&sync->C);
+        sem_wait(&sync->D);
+        
         // Configurar timeout para lectura de todos los jugadores
         fd_set readfds;
         struct timeval timeout;
@@ -290,10 +301,10 @@ int main(int argc, char *argv[]) {
         }
         
         // Si no hay jugadores activos, terminar
-        if (active_count == 0) {
-            printf("[Master] Todos los jugadores han terminado\n");
-            break;
-        }
+        // if (active_count == 0) {
+        //     printf("[Master] Todos los jugadores han terminado\n");
+        //     break;
+        // }
         
         // Calcular cuánto tiempo queda del timeout global
         time_t current_time = time(NULL);
@@ -335,9 +346,6 @@ int main(int argc, char *argv[]) {
                 active_players[i] = 0;
                 continue;
             }
-            
-            // ¡Movimiento recibido! Actualizar tiempo global
-            // last_movement_time = time(NULL);
             
             unsigned short x = state->jugadores[i].x;
             unsigned short y = state->jugadores[i].y;
@@ -402,6 +410,8 @@ int main(int argc, char *argv[]) {
                 // Movimiento inválido - mantener posición actual
                 state->jugadores[i].invalidRequests++;
             }
+
+            sem_post(&(sync->G[i]));
         }
         // avisar a vista (solo si hay vista activa)
         if (config.view_path != NULL) {
@@ -409,6 +419,9 @@ int main(int argc, char *argv[]) {
             sem_wait(&sync->B);
         }
         steps++;
+
+        sem_post(&sync->D);
+        sem_post(&sync->C);
         
         // El delay se ejecuta en cada ciclo del bucle principal, para pausar entre movimientos.
         if (config.delay > 0) {
