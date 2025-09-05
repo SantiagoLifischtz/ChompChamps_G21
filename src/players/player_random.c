@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
+#include <playerlib.h>
 
 double randNorm() {
     return (double)rand() / ((double)RAND_MAX + 1);
@@ -13,7 +14,15 @@ int randInt(int minInclusive, int maxExclusive) {
 
 int main() {
     srand(getpid() ^ time(NULL));
+
+    game_state_t *state = getState();
+    game_sync_t *sync = getSync();
+    int playerListIndex;
+    jugador_t *playerData = getPlayer(state, getpid(), &playerListIndex);
+
     while(1) {
+        sem_wait(&(sync->G[playerListIndex]));
+
         unsigned char move = randInt(0,8);
         write(STDOUT_FILENO, &move, sizeof(move));
     }

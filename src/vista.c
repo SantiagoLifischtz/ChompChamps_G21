@@ -15,7 +15,7 @@ void printAnimatedBar(int length, int frame) {
     frame = ((frame % length) + length) % length;
     for (int i = 0; i < length; i++)
     {
-        if (i != frame) putchar('=');
+        if (i%10 != frame%10) putchar('=');
         else putchar('|');
         putchar(' ');
     }

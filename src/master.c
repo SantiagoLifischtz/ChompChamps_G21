@@ -266,8 +266,6 @@ int main(int argc, char *argv[]) {
         sem_wait(&sync->B);
     }
 
-    sleep(1);
-
     // ----- bucle master -----
     int steps = 0;
     int active_players[MAX_JUGADORES]; // Array para rastrear jugadores activos
