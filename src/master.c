@@ -245,6 +245,7 @@ int main(int argc, char *argv[]) {
             jugadores[i] = pid;
             state->jugadores[i].pid = pid;
             close(pipes[i][1]); // master no escribe en este pipe
+            snprintf(state->jugadores[i].nombre, PLAYER_NAME_LENGTH, config.player_paths[i]);
         } else {
             perror("fork jugador");
             exit(1);

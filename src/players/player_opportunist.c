@@ -86,8 +86,8 @@ int main() {
             int x = playerData->x + ties[i][0];
             int y = playerData->y + ties[i][1];
             int foundScore = state->tablero[y][x];
-            if (foundScore > max) {
-                max = foundScore;
+            if (foundScore > maxScore) {
+                maxScore = foundScore;
                 moveX = ties[i][0];
                 moveY = ties[i][1];
             }

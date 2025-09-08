@@ -44,9 +44,9 @@ int main() {
         if (state->terminado) break;
 
         printf("\n=== Estado del juego ===\n");
-        for (int i=0; i<state->num_jugadores; i++) {
-            printf("Jugador %d: puntaje=%u pos=(%d,%d)\n",
-                   i,
+        for (size_t i=0; i<state->num_jugadores; i++) {
+            printf("%s: puntaje=%u pos=(%d,%d)\n",
+                   state->jugadores[i].nombre,
                    state->jugadores[i].puntaje,
                    state->jugadores[i].x,
                    state->jugadores[i].y);
