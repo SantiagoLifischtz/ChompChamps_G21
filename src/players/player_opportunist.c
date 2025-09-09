@@ -76,12 +76,13 @@ int main() {
                     tieIndex = 0;
                     ties[tieIndex][0] = offX;
                     ties[tieIndex][1] = offY;
+                    tieIndex++;
                 }
             }
         }
 
         int maxScore = 0;
-        for (int i = 0; i < tieIndex; i++)
+        for (int i = 0; i <= tieIndex; i++)
         {
             int x = playerData->x + ties[i][0];
             int y = playerData->y + ties[i][1];
