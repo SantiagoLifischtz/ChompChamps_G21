@@ -33,6 +33,27 @@ jugador_t *getPlayer(game_state_t *state, pid_t playerPid, int *playerListIndex)
     return NULL;
 }
 
+int freeNeighborCount(game_state_t *state, unsigned short x, unsigned short y) {
+    int count = 0;
+    for (int offY = -1; offY <= 1; offY++)
+    {
+        int ny = y + offY;
+        if (ny < 0 || ny >= state->height) continue;
+
+        for (int offX = -1; offX <= 1; offX++)
+        {
+            if (offX == 0 && offY == 0) continue;
+            int nx = x + offX;
+            if (nx < 0 || nx >= state->width) continue;
+
+            if (state->tablero[ny][nx] >= 0) {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
 char (*getMoveMap())[3] {
     return moveMap;
 }

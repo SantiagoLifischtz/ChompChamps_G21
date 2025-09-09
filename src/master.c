@@ -25,7 +25,7 @@
 #define DEFAULT_WIDTH 10
 #define DEFAULT_HEIGHT 10
 #define DEFAULT_DELAY 200
-#define DEFAULT_TIMEOUT 2
+#define DEFAULT_TIMEOUT 1
 
 // Estructura para parámetros de configuración
 typedef struct {
@@ -307,7 +307,7 @@ int main(int argc, char *argv[]) {
         
         // Calcular cuánto tiempo queda del timeout global
         time_t current_time = time(NULL);
-        long remaining_timeout = config.timeout - (current_time - last_movement_time);
+        long remaining_timeout = config.timeout+1 - (current_time - last_movement_time);
         
         // Si no queda tiempo, usar timeout de 0 para que select retorne inmediatamente
         if (remaining_timeout <= 0) {

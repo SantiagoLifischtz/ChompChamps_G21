@@ -18,7 +18,7 @@ int main() {
     game_state_t *state = getState();
     game_sync_t *sync = getSync();
     int playerListIndex;
-    jugador_t *playerData = getPlayer(state, getpid(), &playerListIndex);
+    getPlayer(state, getpid(), &playerListIndex);
 
     while(1) {
         sem_wait(&(sync->G[playerListIndex]));

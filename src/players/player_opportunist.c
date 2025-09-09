@@ -3,27 +3,6 @@
 #include <unistd.h>
 #include <playerlib.h>
 
-int freeNeighborCount(game_state_t *state, unsigned short x, unsigned short y) {
-    int count = 0;
-    for (int offY = -1; offY <= 1; offY++)
-    {
-        int ny = y + offY;
-        if (ny < 0 || ny >= state->height) continue;
-
-        for (int offX = -1; offX <= 1; offX++)
-        {
-            if (offX == 0 && offY == 0) continue;
-            int nx = x + offX;
-            if (nx < 0 || nx >= state->width) continue;
-
-            if (state->tablero[ny][nx] >= 0) {
-                count++;
-            }
-        }
-    }
-    return count;
-}
-
 int main() {
     game_state_t *state = getState();
     game_sync_t *sync = getSync();
@@ -82,7 +61,7 @@ int main() {
         }
 
         int maxScore = 0;
-        for (int i = 0; i <= tieIndex; i++)
+        for (int i = 0; i < tieIndex; i++)
         {
             int x = playerData->x + ties[i][0];
             int y = playerData->y + ties[i][1];

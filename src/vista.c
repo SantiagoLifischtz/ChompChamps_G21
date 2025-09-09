@@ -36,7 +36,7 @@ void gameEnded(game_state_t *state) {
     printf("\n=== Fin del juego ===\n");
     printStatus(state);
 
-    int maxScore = 0;
+    unsigned int maxScore = 0;
     size_t winner = 0;
     for (size_t i=0; i<state->num_jugadores; i++) {
         unsigned int score = state->jugadores[i].puntaje;
