@@ -313,7 +313,7 @@ int main(int argc, char *argv[]) {
         if (remaining_timeout <= 0) {
             printf("[Debug] No time left, forcing immediate timeout\n");
             remaining_timeout = 0;
-            break;
+            state->terminado = 1;
         }
         
         // Usar el tiempo restante como timeout para select
@@ -428,8 +428,6 @@ int main(int argc, char *argv[]) {
             usleep(config.delay * 1000);
         }
     }
-
-    state->terminado = 1;
     
     // Terminar procesos activamente para evitar esperas innecesarias
     for (int i = 0; i < config.num_players; i++) {

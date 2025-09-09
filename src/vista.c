@@ -22,6 +22,32 @@ void printAnimatedBar(int length, int frame) {
     putchar('\n');
 }
 
+void printStatus(game_state_t *state) {
+    for (size_t i=0; i<state->num_jugadores; i++) {
+        printf("%s: puntaje=%u pos=(%d,%d)\n",
+                state->jugadores[i].nombre,
+                state->jugadores[i].puntaje,
+                state->jugadores[i].x,
+                state->jugadores[i].y);
+    }
+}
+
+void gameEnded(game_state_t *state) {
+    printf("\n=== Fin del juego ===\n");
+    printStatus(state);
+
+    int maxScore = 0;
+    size_t winner = 0;
+    for (size_t i=0; i<state->num_jugadores; i++) {
+        unsigned int score = state->jugadores[i].puntaje;
+        if (score > maxScore) {
+            maxScore = score;
+            winner = i;
+        }
+    }
+    printf("\n=== Ganador: [ %s ] ===\n", state->jugadores[winner].nombre);
+}
+
 int main() {
     int shm_state_fd = shm_open("/game_state", O_RDWR, 0666);
     game_state_t *state = mmap(NULL, sizeof(game_state_t),
@@ -44,13 +70,7 @@ int main() {
         if (state->terminado) break;
 
         printf("\n=== Estado del juego ===\n");
-        for (size_t i=0; i<state->num_jugadores; i++) {
-            printf("%s: puntaje=%u pos=(%d,%d)\n",
-                   state->jugadores[i].nombre,
-                   state->jugadores[i].puntaje,
-                   state->jugadores[i].x,
-                   state->jugadores[i].y);
-        }
+        printStatus(state);
 
         printAnimatedBar(state->width,-1-frameCounter);
         for (int y=0; y<state->height; y++) {
@@ -92,6 +112,9 @@ int main() {
 
         sem_post(&sync->B);
     }
+    
+    gameEnded(state);
+    sem_post(&sync->B);
 
     return 0;
 }
