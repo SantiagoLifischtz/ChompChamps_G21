@@ -317,7 +317,7 @@ int main(int argc, char *argv[]) {
         }
         
         // Usar el tiempo restante como timeout para select
-        timeout.tv_sec = remaining_timeout;
+        timeout.tv_sec = 0;
         timeout.tv_usec = 0;
         
         int ready = select(max_fd + 1, &readfds, NULL, NULL, &timeout);

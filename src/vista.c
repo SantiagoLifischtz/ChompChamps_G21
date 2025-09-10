@@ -10,6 +10,8 @@
 #define MAX_WIDTH 100
 #define MAX_HEIGHT 100
 
+static const char* colors[] = {"\033[34m", "\033[31m", "\033[32m", "\033[33m", "\033[35m", "\033[36m", "\033[37m", "\033[90m", "\033[93m"};
+
 void printAnimatedBar(int length, int frame) {
     // Barra animada para mostrar que el juego sigue corriendo
     frame = ((frame % length) + length) % length;
@@ -24,7 +26,8 @@ void printAnimatedBar(int length, int frame) {
 
 void printStatus(game_state_t *state) {
     for (size_t i=0; i<state->num_jugadores; i++) {
-        printf("%s: puntaje=%u pos=(%d,%d)\n",
+        printf("%s%s\033[0m: puntaje=%u pos=(%d,%d)\n",
+                colors[i],
                 state->jugadores[i].nombre,
                 state->jugadores[i].puntaje,
                 state->jugadores[i].x,
@@ -45,7 +48,7 @@ void gameEnded(game_state_t *state) {
             winner = i;
         }
     }
-    printf("\n=== Ganador: [ %s ] ===\n", state->jugadores[winner].nombre);
+    printf("\n=== Ganador: [ %s%s\033[0m ] ===\n", colors[winner], state->jugadores[winner].nombre);
 }
 
 int main() {
@@ -83,8 +86,7 @@ int main() {
                     if (val <= -11) {
                         // Posiciones visitadas: mostrar puntos coloreados
                         int player_id = (-val) - 11;  // Convertir -11,-12,etc a 0,1,etc
-                        const char* colors[] = {"\033[34m", "\033[31m", "\033[32m", "\033[33m", 
-                                              "\033[35m", "\033[36m", "\033[37m", "\033[90m", "\033[93m"};
+                        
                         if (player_id >= 0 && player_id < 9) {
                             printf("%s.\033[0m ", colors[player_id]);
                         } else {
@@ -95,9 +97,6 @@ int main() {
                         int player_id = (-val) - 1;  // Convertir -1,-2,etc a 0,1,etc
                         if (player_id >= 0 && player_id < 9) {
                             char player_char = 'A' + player_id;
-                            const char* colors[] = {"\033[34m", "\033[31m", "\033[32m", "\033[33m", 
-                                                  "\033[35m", "\033[36m", "\033[37m", "\033[90m", "\033[93m"};
-
                             printf("%s%c\033[0m ", colors[player_id], player_char);
                         } else {
                             printf("? ");  // Fallback para jugadores fuera de rango
