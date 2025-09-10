@@ -150,6 +150,19 @@ int parse_arguments(int argc, char *argv[], config_t *config) {
     return 0;
 }
 
+// Retorna el contenido de un string que haya luego de la ultima aparicion de un separador
+char *textAfter(char separator, char *str) {
+    char *lastSeparator = NULL;
+    while (*str)
+    {
+        if (*str == separator) {
+            lastSeparator = str;
+        }
+        str++;
+    }
+    return lastSeparator+1;
+}
+
 int main(int argc, char *argv[]) {
     config_t config;
     
@@ -245,7 +258,7 @@ int main(int argc, char *argv[]) {
             jugadores[i] = pid;
             state->jugadores[i].pid = pid;
             close(pipes[i][1]); // master no escribe en este pipe
-            snprintf(state->jugadores[i].nombre, PLAYER_NAME_LENGTH, config.player_paths[i]);
+            snprintf(state->jugadores[i].nombre, PLAYER_NAME_LENGTH, textAfter('/',config.player_paths[i]));
         } else {
             perror("fork jugador");
             exit(1);
@@ -324,12 +337,13 @@ int main(int argc, char *argv[]) {
         if (ready < 0) {
             perror("select error");
             break;
-        } else if (ready == 0) {
-            // Timeout - no hay movimientos en el tiempo esperado
-            printf("[Master] Timeout global alcanzado (%ld segundos sin movimientos, límite: %d)\n", 
-                   current_time - last_movement_time, config.timeout);
-            break;
         }
+        // else if (ready == 0) {
+        //     // Timeout - no hay movimientos en el tiempo esperado
+        //     printf("[Master] Timeout global alcanzado (%ld segundos sin movimientos, límite: %d)\n", 
+        //            current_time - last_movement_time, config.timeout);
+        //     break;
+        // }
         
         // Procesar movimientos de jugadores que están listos
         for (int i = 0; i < config.num_players; i++) {
