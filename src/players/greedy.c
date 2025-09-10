@@ -35,7 +35,7 @@ int main() {
                 int x = playerData->x + offX;
                 if (x < 0 || x >= state->width) continue;
 
-                int foundScore = state->tablero[y][x];
+                int foundScore = state->tablero[y * state->width + x];
                 if (foundScore > max) {
                     max = foundScore;
                     moveX = offX;

@@ -26,7 +26,7 @@ typedef struct {
     unsigned int num_jugadores;
     jugador_t jugadores[MAX_JUGADORES];
     int terminado;
-    int tablero[MAX_HEIGHT][MAX_WIDTH];
+    int tablero[MAX_WIDTH * MAX_HEIGHT];
 } game_state_t;
 
 typedef struct {

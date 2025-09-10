@@ -52,15 +52,32 @@ void gameEnded(game_state_t *state) {
 }
 
 int main() {
-    int shm_state_fd = shm_open("/game_state", O_RDWR, 0666);
+    int shm_state_fd = shm_open("/game_state", O_RDONLY, 0);
+    if (shm_state_fd == -1) {
+        perror("shm_open game_state");
+        return 1;
+    };
     game_state_t *state = mmap(NULL, sizeof(game_state_t),
-                               PROT_READ | PROT_WRITE, MAP_SHARED,
-                               shm_state_fd, 0);
+    PROT_READ, MAP_SHARED,
+    shm_state_fd, 0);
+    if (state == MAP_FAILED) {
+        perror("mmap game_state");
+        return 1;
+    }
 
-    int shm_sync_fd = shm_open("/game_sync", O_RDWR, 0666);
+    int shm_sync_fd = shm_open("/game_sync", O_RDWR, 0);
+    if (shm_sync_fd == -1) {
+        perror("shm_open game_sync");
+        return 1;
+    }
+    
     game_sync_t *sync = mmap(NULL, sizeof(game_sync_t),
                              PROT_READ | PROT_WRITE, MAP_SHARED,
                              shm_sync_fd, 0);
+    if (sync == MAP_FAILED) {
+        perror("mmap game_sync");
+        return 1;
+    }
 
     printf("[Vista] iniciada.\n");
     fflush(stdout);
@@ -78,30 +95,33 @@ int main() {
         printAnimatedBar(state->width,-1-frameCounter);
         for (int y=0; y<state->height; y++) {
             for (int x=0; x<state->width; x++) {
-                int val = state->tablero[y][x];
-
-                if (val > 0) printf("%d ", val);
-                else if (val == 0) printf(". ");
-                else {
-                    if (val <= -11) {
-                        // Posiciones visitadas: mostrar puntos coloreados
-                        int player_id = (-val) - 11;  // Convertir -11,-12,etc a 0,1,etc
-                        
-                        if (player_id >= 0 && player_id < 9) {
-                            printf("%s.\033[0m ", colors[player_id]);
-                        } else {
-                            printf(". ");  // Fallback
-                        }
-                    } else {
-                        // Posiciones actuales: mostrar letras coloreadas
-                        int player_id = (-val) - 1;  // Convertir -1,-2,etc a 0,1,etc
-                        if (player_id >= 0 && player_id < 9) {
-                            char player_char = 'A' + player_id;
-                            printf("%s%c\033[0m ", colors[player_id], player_char);
-                        } else {
-                            printf("? ");  // Fallback para jugadores fuera de rango
-                        }
+                int val = state->tablero[y * state->width + x];
+                
+                // Verificar si hay un jugador en esta posición actual
+                int current_player = -1;
+                for (size_t i = 0; i < state->num_jugadores; i++) {
+                    if (state->jugadores[i].x == x && state->jugadores[i].y == y) {
+                        current_player = i;
+                        break;
                     }
+                }
+                
+                if (current_player != -1) {
+                    // Posición actual de un jugador: mostrar letra coloreada
+                    char player_char = 'A' + current_player;
+                    printf("%s%c\033[0m ", colors[current_player], player_char);
+                } else if (val < 0) {
+                    // Posiciones visitadas: -i donde i es el índice del jugador
+                    int player_id = (-val) - 1;  // Convertir -1,-2,etc a 0,1,etc
+                    
+                    if (player_id >= 0 && player_id < 9) {
+                        printf("%s.\033[0m ", colors[player_id]);
+                    } else {
+                        printf(". ");  // Fallback
+                    }
+                } else {
+                    // Casilleros no visitados: mostrar valores (incluye 0)
+                    printf("%d ", val);
                 }
             }
             printf("\n");

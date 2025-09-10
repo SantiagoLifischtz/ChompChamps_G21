@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
     srand(config.seed);
     for (int y=0; y<state->height; y++) {
         for (int x=0; x<state->width; x++) {
-            state->tablero[y][x] = 1 + rand() % 9;
+            state->tablero[y * state->width + x] = 1 + rand() % 9;
         }
     }
     
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
                 break;
         }
         state->jugadores[i].puntaje = 0;
-        state->tablero[state->jugadores[i].y][state->jugadores[i].x] = -(i+1);
+        state->tablero[state->jugadores[i].y * state->width + state->jugadores[i].x] = -(i+1);
 
     }
 
@@ -396,7 +396,7 @@ int main(int argc, char *argv[]) {
             }
 
             // Verificar si la posición de destino es válida (no ocupada)
-            int destino_valor = state->tablero[ny][nx];
+            int destino_valor = state->tablero[ny * state->width + nx];
             
             // Solo permitir el movimiento si:
             // 1. La posición tiene un valor positivo (comida disponible)
@@ -409,12 +409,12 @@ int main(int argc, char *argv[]) {
                 state->jugadores[i].validRequests++;
                 
                 // Marcar antigua posición como visitada (si era posición actual)
-                if (state->tablero[y][x] == -(i+1)) {
-                    state->tablero[y][x] = -(i+11);  // Visitada: -11 para jugador 0, -12 para jugador 1
+                if (state->tablero[y * state->width + x] == -(i+1)) {
+                    state->tablero[y * state->width + x] = -(i+11);  // Visitada: -11 para jugador 0, -12 para jugador 1
                 }
                 
                 // Marcar nueva posición como posición actual del jugador
-                state->tablero[ny][nx] = -(i+1);  // Actual: -1 para jugador 0, -2 para jugador 1
+                state->tablero[ny * state->width + nx] = -(i+1);  // Actual: -1 para jugador 0, -2 para jugador 1
                 state->jugadores[i].x = nx;
                 state->jugadores[i].y = ny;
 

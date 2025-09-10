@@ -38,7 +38,7 @@ int main() {
                 int x = playerData->x + offX;
                 if (x < 0 || x >= state->width) continue;
 
-                if (state->tablero[y][x] < 0) continue;
+                if (state->tablero[y * state->width + x] < 0) continue;
 
                 int freeSpaces = freeNeighborCount(state, x, y);
                 
@@ -65,7 +65,7 @@ int main() {
         {
             int x = playerData->x + ties[i][0];
             int y = playerData->y + ties[i][1];
-            int foundScore = state->tablero[y][x];
+            int foundScore = state->tablero[y * state->width + x];
             if (foundScore > maxScore) {
                 maxScore = foundScore;
                 moveX = ties[i][0];
