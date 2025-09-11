@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
                 break;
         }
         state->jugadores[i].puntaje = 0;
-        state->tablero[state->jugadores[i].y * state->width + state->jugadores[i].x] = -(i+1);
+        // No marcar la posición inicial en el tablero ya que se obtiene del estado del juego
 
     }
 
@@ -395,26 +395,34 @@ int main(int argc, char *argv[]) {
                     break;
             }
 
-            // Verificar si la posición de destino es válida (no ocupada)
+            // Verificar si la posición de destino es válida
             int destino_valor = state->tablero[ny * state->width + nx];
+            
+            // Verificar si hay otro jugador en la posición de destino
+            int posicion_ocupada = 0;
+            for (int j = 0; j < config.num_players; j++) {
+                if (j != i && state->jugadores[j].x == nx && state->jugadores[j].y == ny) {
+                    posicion_ocupada = 1;
+                    break;
+                }
+            }
             
             // Solo permitir el movimiento si:
             // 1. La posición tiene un valor positivo (comida disponible)
-            // 2. O la posición es 0 (vacía)
-            // NO permitir si es negativo (ocupada por jugador actual o visitada)
-            if (destino_valor > 0 || destino_valor == 0) {
+            // 2. No está ocupada por otro jugador actualmente
+            // NO permitir si es 0 o negativo (posiciones visitadas por jugadores)
+            if (destino_valor > 0 && !posicion_ocupada) {
                 // Movimiento válido - actualizar puntaje y tablero
                 int reward = destino_valor;
                 if (reward > 0) state->jugadores[i].puntaje += reward;
                 state->jugadores[i].validRequests++;
                 
-                // Marcar antigua posición como visitada (si era posición actual)
-                if (state->tablero[y * state->width + x] == -(i+1)) {
-                    state->tablero[y * state->width + x] = -(i+11);  // Visitada: -11 para jugador 0, -12 para jugador 1
-                }
+                // Marcar antigua posición como visitada
+                state->tablero[y * state->width + x] = -i;  // Jugador i visitado: -i
                 
-                // Marcar nueva posición como posición actual del jugador
-                state->tablero[ny * state->width + nx] = -(i+1);  // Actual: -1 para jugador 0, -2 para jugador 1
+                
+                // La nueva posición no necesita marcarse en el tablero ya que
+                // la posición actual se obtiene de state->jugadores[i].x/y
                 state->jugadores[i].x = nx;
                 state->jugadores[i].y = ny;
 

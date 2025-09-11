@@ -43,8 +43,13 @@ void drawBoard(game_state_t *state) {
                 char player_char = 'A' + current_player;
                 printf("%s%c\033[0m ", colors[current_player], player_char);
             } else if (val <= 0) {
-                // Posiciones visitadas: -i donde i es el índice del jugador
-                int player_id = (-val);  // Convertir -1,-2,etc a 0,1,etc
+                // Posiciones visitadas: 0 para jugador 0, -i para jugador i
+                int player_id;
+                if (val == 0) {
+                    player_id = 0;  // Jugador 0
+                } else {
+                    player_id = -val;  // Convertir -1,-2,etc a 1,2,etc
+                }
                 
                 if (player_id >= 0 && player_id < 9) {
                     printf("%s.\033[0m ", colors[player_id]);
