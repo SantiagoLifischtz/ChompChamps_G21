@@ -46,7 +46,7 @@ int freeNeighborCount(game_state_t *state, unsigned short x, unsigned short y) {
             int nx = x + offX;
             if (nx < 0 || nx >= state->width) continue;
 
-            if (state->tablero[ny * state->width + nx] >= 0) {
+            if (state->tablero[ny * state->width + nx] > 0) {
                 count++;
             }
         }

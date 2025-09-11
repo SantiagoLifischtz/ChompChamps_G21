@@ -38,7 +38,7 @@ int main() {
                 int x = playerData->x + offX;
                 if (x < 0 || x >= state->width) continue;
 
-                if (state->tablero[y * state->width + x] < 0) continue;
+                if (state->tablero[y * state->width + x] <= 0) continue;
 
                 int freeSpaces = freeNeighborCount(state, x, y);
                 

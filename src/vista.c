@@ -24,6 +24,42 @@ void printAnimatedBar(int length, int frame) {
     putchar('\n');
 }
 
+void drawBoard(game_state_t *state) {
+    for (int y=0; y<state->height; y++) {
+        for (int x=0; x<state->width; x++) {
+            int val = state->tablero[y * state->width + x];
+            
+            // Verificar si hay un jugador en esta posición actual
+            int current_player = -1;
+            for (size_t i = 0; i < state->num_jugadores; i++) {
+                if (state->jugadores[i].x == x && state->jugadores[i].y == y) {
+                    current_player = i;
+                    break;
+                }
+            }
+            
+            if (current_player != -1) {
+                // Posición actual de un jugador: mostrar letra coloreada
+                char player_char = 'A' + current_player;
+                printf("%s%c\033[0m ", colors[current_player], player_char);
+            } else if (val <= 0) {
+                // Posiciones visitadas: -i donde i es el índice del jugador
+                int player_id = (-val);  // Convertir -1,-2,etc a 0,1,etc
+                
+                if (player_id >= 0 && player_id < 9) {
+                    printf("%s.\033[0m ", colors[player_id]);
+                } else {
+                    printf(". ");  // Fallback
+                }
+            } else {
+                // Casilleros no visitados: mostrar valores (incluye 0)
+                printf("%d ", val);
+            }
+        }
+        printf("\n");
+    }
+}
+
 void printStatus(game_state_t *state) {
     for (size_t i=0; i<state->num_jugadores; i++) {
         printf("%s%s\033[0m: puntaje=%u pos=(%d,%d)\n",
@@ -36,8 +72,9 @@ void printStatus(game_state_t *state) {
 }
 
 void gameEnded(game_state_t *state) {
-    printf("\n=== Fin del juego ===\n");
+    printf("\n\n\n=== Fin del juego ===\n");
     printStatus(state);
+    printf("\n");
 
     unsigned int maxScore = 0;
     size_t winner = 0;
@@ -48,6 +85,7 @@ void gameEnded(game_state_t *state) {
             winner = i;
         }
     }
+    drawBoard(state);
     printf("\n=== Ganador: [ %s%s\033[0m ] ===\n", colors[winner], state->jugadores[winner].nombre);
 }
 
@@ -93,39 +131,7 @@ int main() {
         printStatus(state);
 
         printAnimatedBar(state->width,-1-frameCounter);
-        for (int y=0; y<state->height; y++) {
-            for (int x=0; x<state->width; x++) {
-                int val = state->tablero[y * state->width + x];
-                
-                // Verificar si hay un jugador en esta posición actual
-                int current_player = -1;
-                for (size_t i = 0; i < state->num_jugadores; i++) {
-                    if (state->jugadores[i].x == x && state->jugadores[i].y == y) {
-                        current_player = i;
-                        break;
-                    }
-                }
-                
-                if (current_player != -1) {
-                    // Posición actual de un jugador: mostrar letra coloreada
-                    char player_char = 'A' + current_player;
-                    printf("%s%c\033[0m ", colors[current_player], player_char);
-                } else if (val <= 0) {
-                    // Posiciones visitadas: -i donde i es el índice del jugador
-                    int player_id = (-val);  // Convertir -1,-2,etc a 0,1,etc
-                    
-                    if (player_id >= 0 && player_id < 9) {
-                        printf("%s.\033[0m ", colors[player_id]);
-                    } else {
-                        printf(". ");  // Fallback
-                    }
-                } else {
-                    // Casilleros no visitados: mostrar valores (incluye 0)
-                    printf("%d ", val);
-                }
-            }
-            printf("\n");
-        }
+        drawBoard(state);
         printAnimatedBar(state->width,frameCounter++);
         fflush(stdout);
 
