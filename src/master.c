@@ -163,6 +163,23 @@ char *textAfter(char separator, char *str) {
     return lastSeparator+1;
 }
 
+// Mueve un jugador a una posicion y la ocupa en el tablero. Retorna:
+// - 0 si el movimiento es invalido
+// - El puntaje que habia en esa posicion antes de ocuparla si es valido
+int movePlayer(game_state_t *state, int playerId, unsigned short targetX, unsigned short targetY) {
+    if (targetX >= state->width || targetY >= state->height) {
+        return 0;
+    }
+    int score = state->tablero[targetY * state->width + targetX];
+    if (score <= 0) {
+        return 0;
+    }
+    state->jugadores[playerId].x = targetX;
+    state->jugadores[playerId].y = targetY;
+    state->tablero[targetY * state->width + targetX] = -playerId;
+    return score;
+}
+
 int main(int argc, char *argv[]) {
     config_t config;
     
@@ -196,30 +213,24 @@ int main(int argc, char *argv[]) {
         }
     }
     
-
-
     // jugadores iniciales - distribuirlos en esquinas/bordes del tablero
+    // TODO: cambiar a circulo alrededor del centro del tablero
     for (int i = 0; i < config.num_players; i++) {
         switch (i % 4) {
             case 0: // esquina superior izquierda
-                state->jugadores[i].x = 0;
-                state->jugadores[i].y = 0;
+                movePlayer(state, i, 0, 0);
                 break;
             case 1: // esquina inferior derecha
-                state->jugadores[i].x = state->width - 1;
-                state->jugadores[i].y = state->height - 1;
+                movePlayer(state, i, state->width - 1, state->height - 1);
                 break;
             case 2: // esquina superior derecha
-                state->jugadores[i].x = state->width - 1;
-                state->jugadores[i].y = 0;
+                movePlayer(state, i, state->width - 1, 0);
                 break;
             case 3: // esquina inferior izquierda
-                state->jugadores[i].x = 0;
-                state->jugadores[i].y = state->height - 1;
+                movePlayer(state, i, 0, state->height - 1);
                 break;
         }
         state->jugadores[i].puntaje = 0;
-        // No marcar la posición inicial en el tablero ya que se obtiene del estado del juego
 
     }
 
@@ -296,7 +307,7 @@ int main(int argc, char *argv[]) {
 
         sem_wait(&sync->C);
         sem_wait(&sync->D);
-        
+
         // Configurar timeout para lectura de todos los jugadores
         fd_set readfds;
         struct timeval timeout;
@@ -367,28 +378,28 @@ int main(int argc, char *argv[]) {
             // interpretar movimiento (0 arriba, 2 derecha, 4 abajo, 6 izquierda, 1 arriba-derecha, 3 abajo-derecha, 5 abajo-izquierda, 7 arriba-izquierda)
             switch (move) {
                 case 0: // arriba
-                    if (y > 0) ny--;
+                    ny--;
                     break;
                 case 1: // arriba-derecha
-                    if (y > 0 && x + 1 < state->width) { ny--; nx++; }
+                    { ny--; nx++; }
                     break;
                 case 2: // derecha
-                    if (x + 1 < state->width) nx++;
+                    nx++;
                     break;
                 case 3: // abajo-derecha
-                    if (y + 1 < state->height && x + 1 < state->width) { ny++; nx++; }
+                    { ny++; nx++; }
                     break;
                 case 4: // abajo
-                    if (y + 1 < state->height) ny++;
+                    ny++;
                     break;
                 case 5: // abajo-izquierda
-                    if (y + 1 < state->height && x > 0) { ny++; nx--; }
+                    { ny++; nx--; }
                     break;
                 case 6: // izquierda
-                    if (x > 0) nx--;
+                    nx--;
                     break;
                 case 7: // arriba-izquierda
-                    if (y > 0 && x > 0) { ny--; nx--; }
+                    { ny--; nx--; }
                     break;
                 default:
                     // movimiento inválido, no hacer nada
@@ -396,39 +407,25 @@ int main(int argc, char *argv[]) {
             }
 
             // Verificar si la posición de destino es válida
-            int destino_valor = state->tablero[ny * state->width + nx];
+            int moveResult = movePlayer(state, i, nx, ny);
             
             // Verificar si hay otro jugador en la posición de destino
-            int posicion_ocupada = 0;
-            for (int j = 0; j < config.num_players; j++) {
-                if (j != i && state->jugadores[j].x == nx && state->jugadores[j].y == ny) {
-                    posicion_ocupada = 1;
-                    break;
-                }
-            }
+            // int posicion_ocupada = 0;
+            // for (int j = 0; j < config.num_players; j++) {
+            //     if (j != i && state->jugadores[j].x == nx && state->jugadores[j].y == ny) {
+            //         posicion_ocupada = 1;
+            //         break;
+            //     }
+            // }
+            // este checkeo es innecesario
             
-            // Solo permitir el movimiento si:
-            // 1. La posición tiene un valor positivo (comida disponible)
-            // 2. No está ocupada por otro jugador actualmente
-            // NO permitir si es 0 o negativo (posiciones visitadas por jugadores)
-            if (destino_valor > 0 && !posicion_ocupada) {
-                // Movimiento válido - actualizar puntaje y tablero
-                int reward = destino_valor;
-                if (reward > 0) state->jugadores[i].puntaje += reward;
+            // Solo permitir el movimiento si la posición tiene un valor positivo
+            if (moveResult > 0) {
                 state->jugadores[i].validRequests++;
-                
-                // Marcar antigua posición como visitada
-                state->tablero[y * state->width + x] = -i;  // Jugador i visitado: -i
-                
-                
-                // La nueva posición no necesita marcarse en el tablero ya que
-                // la posición actual se obtiene de state->jugadores[i].x/y
-                state->jugadores[i].x = nx;
-                state->jugadores[i].y = ny;
-
+                state->jugadores[i].puntaje += moveResult;
                 last_movement_time = time(NULL);
             } else {
-                // Movimiento inválido - mantener posición actual
+                // Movimiento invalido
                 state->jugadores[i].invalidRequests++;
             }
 
