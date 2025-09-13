@@ -105,6 +105,7 @@ void printStatus(game_state_t *state, char *title) {
     printf("\n%28s\n", title);
     jugador_t *players = state->jugadores;
     int *idOrder = getPlayerOrder(state);
+    if (!idOrder) return;
 
     for (size_t i = 0; i < state->num_jugadores; i++) {
         int id = idOrder[i];
@@ -119,6 +120,7 @@ void printStatus(game_state_t *state, char *title) {
         }
         putchar('\n');
     }
+    free(idOrder);
 }
 
 void gameEnded(game_state_t *state) {

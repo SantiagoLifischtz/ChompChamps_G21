@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <math.h>
 #include <limits.h>
+#include <string.h>
 
 static char moveMap[3][3] = {
     {7,0,1},
@@ -77,4 +78,48 @@ int sqrDistClosestOther(game_state_t *state, unsigned int callerId, unsigned sho
 
 char (*getMoveMap())[3] {
     return moveMap;
+}
+
+
+typedef struct {
+    unsigned short x, y;
+    unsigned int depth;
+} Node;
+
+int bfsExplore(game_state_t *state, unsigned short startX, unsigned short startY, unsigned int maxDepth) {
+    if (startX >= state->width || startY >= state->height) return 0;
+    int totalScore = 0;
+
+    int visited[state->height][state->width];
+    memset(visited, 0, sizeof(visited));
+
+    int s = 2*maxDepth+1;
+    Node queue[s*s];
+    int qHead = 0, qTail = 0;
+    queue[qTail++] = (Node){startX, startY, 0};
+    visited[startY][startX] = 1;
+
+    while(qHead < qTail) {
+        Node current = queue[qHead++];
+        if (current.depth >= maxDepth) continue;
+
+        for (int offY = -1; offY <= 1; offY++) {
+            int y = current.y + offY;
+            if (y < 0 || y >= state->height) continue;
+
+            for (int offX = -1; offX <= 1; offX++) {
+                if (offX == 0 && offY == 0) continue;
+                int x = current.x + offX;
+                if (x < 0 || x >= state->width) continue;
+                
+                int score = state->tablero[y*state->width+x];
+                if (visited[y][x] || score <= 0) continue;
+
+                visited[y][x] = 1;
+                queue[qTail++] = (Node){x, y, current.depth+1};
+                totalScore += score;
+            }
+        }
+    }
+    return totalScore;
 }

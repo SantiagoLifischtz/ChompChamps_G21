@@ -10,5 +10,6 @@ int freeNeighborCount(game_state_t *state, unsigned short x, unsigned short y);
 char (*getMoveMap())[3];
 int squareDistanceToPlayer(game_state_t *state, int targetPlayerId, unsigned short fromX, unsigned short fromY);
 int sqrDistClosestOther(game_state_t *state, unsigned int callerId, unsigned short fromX, unsigned short fromY);
+int bfsExplore(game_state_t *state, unsigned short x, unsigned short y, unsigned int maxDepth);
 
 #endif
