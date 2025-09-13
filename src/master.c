@@ -250,14 +250,37 @@ int main(int argc, char *argv[]) {
         sem_init(&(sync->G[i]), 1, 0);
     }
 
+    // ----- vista -----
+    if (config.view_path != NULL) {
+        vista = fork();
+        if (vista == 0) {
+            // hijo = vista
+            execl(config.view_path, "vista", NULL);
+            perror("execl vista");
+            exit(1);
+        }
+    }
+
     // ----- pipes + jugadores -----
     for (int i = 0; i < config.num_players; i++) {
         pipe(pipes[i]);
         pid_t pid = fork();
         if (pid == 0) {
             // hijo = jugador
-            close(pipes[i][0]);                     // cierro lectura
-            dup2(pipes[i][1], STDOUT_FILENO);       // stdout → escritura del pipe
+            
+            // CRÍTICO: Cerrar TODOS los pipes heredados de otros jugadores
+            for (int j = 0; j < i; j++) {
+                close(pipes[j][0]); // cerrar lectura de pipes anteriores
+            }
+            
+            // Cerrar el extremo de lectura del pipe propio
+            close(pipes[i][0]);
+            
+            // Redirigir stdout al extremo de escritura del pipe
+            dup2(pipes[i][1], STDOUT_FILENO);
+            
+            // Cerrar el descriptor original después del dup2
+            close(pipes[i][1]);
 
             // Usar la ruta del jugador especificada en la configuración
             char player_name[64];
@@ -276,17 +299,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // ----- vista -----
     if (config.view_path != NULL) {
-        vista = fork();
-        if (vista == 0) {
-            execl(config.view_path, "vista", NULL);
-            perror("execl vista");
-            exit(1);
-        }
-        
         // Enviar estado inicial a la vista
-
         sem_post(&sync->A);
         sem_wait(&sync->B);
     }
@@ -456,6 +470,12 @@ int main(int argc, char *argv[]) {
     if (vista > 0) {
         kill(vista, SIGTERM);
         waitpid(vista, NULL, 0);
+    }
+
+    // Cerrar todos los pipes restantes en el master
+    for (int i = 0; i < config.num_players; i++) {
+        close(pipes[i][0]); // cerrar extremos de lectura
+        // pipes[i][1] ya están cerrados anteriormente
     }
 
     shm_unlink("/game_state");
