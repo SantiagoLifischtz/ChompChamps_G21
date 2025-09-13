@@ -101,13 +101,14 @@ int *getPlayerOrder(game_state_t *state) {
     return idOrder;
 }
 
-void printStatus(game_state_t *state) {
+void printStatus(game_state_t *state, char *title) {
+    printf("\n%28s\n", title);
     jugador_t *players = state->jugadores;
     int *idOrder = getPlayerOrder(state);
 
     for (size_t i = 0; i < state->num_jugadores; i++) {
         int id = idOrder[i];
-        printf("%s%-16s\033[0m | %4u puntos | (%2d,%2d) |",
+        printf("%s%-16s\033[0m | %4u p | (%2d,%2d) |",
                 colors[id],
                 players[id].nombre,
                 players[id].puntaje,
@@ -121,8 +122,7 @@ void printStatus(game_state_t *state) {
 }
 
 void gameEnded(game_state_t *state) {
-    printf("\n\n=== Fin del juego ===\n");
-    printStatus(state);
+    printStatus(state, "=== Game over ===");
     putchar('\n');
 
     unsigned int maxScore = 0;
@@ -137,7 +137,7 @@ void gameEnded(game_state_t *state) {
     printEndgameBar(state->width);
     drawBoard(state);
     printEndgameBar(state->width);
-    printf("\n=== Ganador: [ %s%s\033[0m ] ===\n", colors[winner], state->jugadores[winner].nombre);
+    printf("\n=== Winner: [ %s%s\033[0m ] ===\n", colors[winner], state->jugadores[winner].nombre);
 }
 
 int main() {
@@ -168,7 +168,6 @@ int main() {
         return 1;
     }
 
-    printf("[Vista] iniciada.\n");
     fflush(stdout);
 
     int frameCounter = 0;
@@ -177,9 +176,8 @@ int main() {
         sem_wait(&sync->A);
 
         if (state->terminado) break;
-
-        printf("\n=== Estado del juego ===\n");
-        printStatus(state);
+        printStatus(state, "=== Leaderboard ===");
+        putchar('\n');
         
         printAnimatedBar(state->width,-1-frameCounter);
         drawBoard(state);

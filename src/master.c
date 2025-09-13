@@ -476,11 +476,10 @@ int main(int argc, char *argv[]) {
         
         // Calcular cuánto tiempo queda del timeout global
         time_t current_time = time(NULL);
-        long remaining_timeout = config.timeout+1 - (current_time - last_movement_time);
+        long remaining_timeout = config.timeout - (current_time - last_movement_time);
         
         // Si no queda tiempo, usar timeout de 0 para que select retorne inmediatamente
         if (remaining_timeout <= 0) {
-            printf("[Debug] No time left, forcing immediate timeout\n");
             remaining_timeout = 0;
             state->terminado = 1;
         }
