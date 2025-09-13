@@ -67,12 +67,16 @@ void drawBoard(game_state_t *state) {
 
 void printStatus(game_state_t *state) {
     for (size_t i=0; i<state->num_jugadores; i++) {
-        printf("%s%s\033[0m: puntaje=%u pos=(%d,%d)\n",
+        printf("%s%s\033[0m: puntaje=%u pos=(%d,%d)",
                 colors[i],
                 state->jugadores[i].nombre,
                 state->jugadores[i].puntaje,
                 state->jugadores[i].x,
                 state->jugadores[i].y);
+        if (state->jugadores[i].stuck) {
+            printf(" (x_x)");
+        }
+        putchar('\n');
     }
 }
 

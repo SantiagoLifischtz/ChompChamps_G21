@@ -17,7 +17,7 @@ typedef struct {
     unsigned int validRequests;
     unsigned short x, y;
     pid_t pid;
-    int blocking;
+    int stuck;
 } jugador_t;
 
 typedef struct {

@@ -180,6 +180,30 @@ int movePlayer(game_state_t *state, int playerId, unsigned short targetX, unsign
     return score;
 }
 
+// Retorna 1 si es posible salir de la posicion (x,y), 0 si no.
+int isEscapable(game_state_t *state, unsigned short centerX, unsigned short centerY) {
+    for (int offY = -1; offY <= 1; offY++)
+    {
+        int y = centerY+offY;
+        if (y < 0 || y >= state->height) continue;
+        for (int offX = -1; offX <= 1; offX++)
+        {
+            int x = centerX+offX;
+            if (offX == 0 && offY == 0) continue;
+            if (x < 0 || x >= state->width) continue;
+
+            if (state->tablero[y*state->width+x] > 0) return 1;
+        }
+    }
+    return 0;
+}
+
+// Retorna 1 si el jugador esta atascado, 0 si no.
+int isStuck(game_state_t *state, int playerId) {
+    jugador_t player = state->jugadores[playerId];
+    return player.stuck || !isEscapable(state, player.x, player.y);
+}
+
 int main(int argc, char *argv[]) {
     config_t config;
     
@@ -313,18 +337,13 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < config.num_players; i++) {
         active_players[i] = 1;
         sem_post(&(sync->G[i]));
-        printf("\n");
     }
 
     time_t last_movement_time = time(NULL); // Tiempo del último movimiento de cualquier jugador    
     while (!state->terminado) {
 
-        sem_wait(&sync->C);
-        sem_wait(&sync->D);
-
         // Configurar timeout para lectura de todos los jugadores
         fd_set readfds;
-        struct timeval timeout;
         int max_fd = -1;
         
         FD_ZERO(&readfds);
@@ -337,27 +356,7 @@ int main(int argc, char *argv[]) {
             }
         }
         
-        // Si no hay jugadores activos, terminar
-        // if (active_count == 0) {
-        //     printf("[Master] Todos los jugadores han terminado\n");
-        //     break;
-        // }
-        
-        // Calcular cuánto tiempo queda del timeout global
-        time_t current_time = time(NULL);
-        long remaining_timeout = config.timeout+1 - (current_time - last_movement_time);
-        
-        // Si no queda tiempo, usar timeout de 0 para que select retorne inmediatamente
-        if (remaining_timeout <= 0) {
-            printf("[Debug] No time left, forcing immediate timeout\n");
-            remaining_timeout = 0;
-            state->terminado = 1;
-        }
-        
-        // Usar el tiempo restante como timeout para select
-        timeout.tv_sec = 0;
-        timeout.tv_usec = 0;
-        
+        struct timeval timeout = {0,0};
         int ready = select(max_fd + 1, &readfds, NULL, NULL, &timeout);
         if (ready < 0) {
             perror("select error");
@@ -369,6 +368,9 @@ int main(int argc, char *argv[]) {
         //            current_time - last_movement_time, config.timeout);
         //     break;
         // }
+
+        sem_wait(&sync->C);
+        sem_wait(&sync->D);
         
         // Procesar movimientos de jugadores que están listos
         for (int i = 0; i < config.num_players; i++) {
@@ -443,17 +445,41 @@ int main(int argc, char *argv[]) {
                 state->jugadores[i].invalidRequests++;
             }
 
-            sem_post(&(sync->G[i]));
-        }
-        // avisar a vista (solo si hay vista activa)
-        if (config.view_path != NULL) {
-            sem_post(&sync->A);
-            sem_wait(&sync->B);
+            if (isStuck(state, i)) {
+                state->jugadores[i].stuck = 1;
+                active_players[i] = 0;
+            }
+            else {
+                sem_post(&(sync->G[i]));
+            }
         }
         steps++;
 
         sem_post(&sync->D);
         sem_post(&sync->C);
+
+        // Si no hay jugadores activos, terminar
+        if (active_count == 0) {
+            printf("[Master] Todos los jugadores han terminado\n");
+            state->terminado = 1;
+        }
+        
+        // Calcular cuánto tiempo queda del timeout global
+        time_t current_time = time(NULL);
+        long remaining_timeout = config.timeout+1 - (current_time - last_movement_time);
+        
+        // Si no queda tiempo, usar timeout de 0 para que select retorne inmediatamente
+        if (remaining_timeout <= 0) {
+            printf("[Debug] No time left, forcing immediate timeout\n");
+            remaining_timeout = 0;
+            state->terminado = 1;
+        }
+
+        // avisar a vista (solo si hay vista activa)
+        if (config.view_path != NULL) {
+            sem_post(&sync->A);
+            sem_wait(&sync->B);
+        }
         
         // El delay se ejecuta en cada ciclo del bucle principal, para pausar entre movimientos.
         if (config.delay > 0) {
