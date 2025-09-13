@@ -14,10 +14,10 @@ static const char* colors[] = {"\033[34m", "\033[31m", "\033[32m", "\033[33m", "
 
 void printAnimatedBar(int length, int frame) {
     // Barra animada para mostrar que el juego sigue corriendo
-    frame = ((frame % length) + length) % length;
+    int pos = ((frame % 10) + 10) % 10;
     for (int i = 0; i < length; i++)
     {
-        if (i%10 != frame%10) putchar('-');
+        if (i%10 != pos) putchar('-');
         else putchar('|');
         putchar(' ');
     }
@@ -69,29 +69,61 @@ void drawBoard(game_state_t *state) {
                 printf("%d ", val);
             }
         }
-        printf("\n");
+        putchar('\n');
     }
 }
 
+int *getPlayerOrder(game_state_t *state) {
+    int n = state->num_jugadores;
+    int *idOrder = malloc(sizeof(int) * n);
+    if (!idOrder) return NULL;
+
+    for (int i = 0; i < n; i++) {
+        idOrder[i] = i;
+    }
+
+    // Selection sort
+    for (int i = 0; i < n - 1; i++) {
+        int best = i;
+        for (int j = i + 1; j < n; j++) {
+            if (state->jugadores[idOrder[j]].puntaje >
+                state->jugadores[idOrder[best]].puntaje) {
+                best = j;
+            }
+        }
+        if (best != i) {
+            int tmp = idOrder[i];
+            idOrder[i] = idOrder[best];
+            idOrder[best] = tmp;
+        }
+    }
+
+    return idOrder;
+}
+
 void printStatus(game_state_t *state) {
-    for (size_t i=0; i<state->num_jugadores; i++) {
-        printf("%s%s\033[0m: puntaje=%u pos=(%d,%d)",
-                colors[i],
-                state->jugadores[i].nombre,
-                state->jugadores[i].puntaje,
-                state->jugadores[i].x,
-                state->jugadores[i].y);
-        if (state->jugadores[i].stuck) {
-            printf(" %s(x_x)\033[0m",colors[i]);
+    jugador_t *players = state->jugadores;
+    int *idOrder = getPlayerOrder(state);
+
+    for (size_t i = 0; i < state->num_jugadores; i++) {
+        int id = idOrder[i];
+        printf("%s%-16s\033[0m | %4u puntos | (%2d,%2d) |",
+                colors[id],
+                players[id].nombre,
+                players[id].puntaje,
+                players[id].x,
+                players[id].y);
+        if (players[id].stuck) {
+            printf(" %s(x_x)\033[0m",colors[id]);
         }
         putchar('\n');
     }
 }
 
 void gameEnded(game_state_t *state) {
-    printf("\n\n\n=== Fin del juego ===\n");
+    printf("\n\n=== Fin del juego ===\n");
     printStatus(state);
-    printf("\n");
+    putchar('\n');
 
     unsigned int maxScore = 0;
     size_t winner = 0;

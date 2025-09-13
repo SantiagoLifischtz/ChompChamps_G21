@@ -207,7 +207,7 @@ int isStuck(game_state_t *state, int playerId) {
 
 void setStartingPositions(game_state_t *state) {
     double angleStep = 2*M_PI/state->num_jugadores;
-    double angle = 0;
+    double angle = angleStep * (rand() % state->num_jugadores);
 
     unsigned short centerX = state->width/2;
     unsigned short centerY = state->height/2;
@@ -346,6 +346,10 @@ int main(int argc, char *argv[]) {
         sem_post(&(sync->G[i]));
     }
 
+    if (config.delay > 0) {
+        usleep(config.delay * 1000);
+    }
+
     time_t last_movement_time = time(NULL); // Tiempo del último movimiento de cualquier jugador    
     while (!state->terminado) {
 
@@ -467,7 +471,6 @@ int main(int argc, char *argv[]) {
 
         // Si no hay jugadores activos, terminar
         if (active_count == 0) {
-            printf("[Master] Todos los jugadores han terminado\n");
             state->terminado = 1;
         }
         
