@@ -207,7 +207,7 @@ int isStuck(game_state_t *state, int playerId) {
 
 void setStartingPositions(game_state_t *state) {
     double angleStep = 2*M_PI/state->num_jugadores;
-    double angle = angleStep * (rand() % state->num_jugadores);
+    double angle = (rand() / (double) RAND_MAX) * 2*M_PI;
 
     unsigned short centerX = state->width/2;
     unsigned short centerY = state->height/2;

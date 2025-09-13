@@ -86,9 +86,10 @@ typedef struct {
     unsigned int depth;
 } Node;
 
-int bfsExplore(game_state_t *state, unsigned short startX, unsigned short startY, unsigned int maxDepth) {
+int bfsExplore(game_state_t *state, unsigned short startX, unsigned short startY, unsigned int maxDepth, int *exploredSpaces) {
     if (startX >= state->width || startY >= state->height) return 0;
     int totalScore = 0;
+    int count = 0;
 
     int visited[state->height][state->width];
     memset(visited, 0, sizeof(visited));
@@ -118,8 +119,10 @@ int bfsExplore(game_state_t *state, unsigned short startX, unsigned short startY
                 visited[y][x] = 1;
                 queue[qTail++] = (Node){x, y, current.depth+1};
                 totalScore += score;
+                count++;
             }
         }
     }
+    if (exploredSpaces != NULL) *exploredSpaces = count;
     return totalScore;
 }
