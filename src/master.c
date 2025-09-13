@@ -14,6 +14,7 @@
 #include <sys/select.h>
 #include <signal.h>
 #include <structs.h>
+#include <math.h>
 
 #define MAX_JUGADORES 9
 #define MIN_JUGADORES 1
@@ -204,6 +205,24 @@ int isStuck(game_state_t *state, int playerId) {
     return player.stuck || !isEscapable(state, player.x, player.y);
 }
 
+void setStartingPositions(game_state_t *state) {
+    double angleStep = 2*M_PI/state->num_jugadores;
+    double angle = 0;
+
+    unsigned short centerX = state->width/2;
+    unsigned short centerY = state->height/2;
+    double radius = (state->width < state->height ? state->width : state->height)*0.375;
+
+    for (size_t i = 0; i < state->num_jugadores; i++)
+    {
+        unsigned short x = centerX + cos(angle)*radius;
+        unsigned short y = centerY + sin(angle)*radius;
+        movePlayer(state, i, x, y);
+        angle += angleStep;
+    }
+    
+}
+
 int main(int argc, char *argv[]) {
     config_t config;
     
@@ -237,28 +256,13 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    // jugadores iniciales - distribuirlos en esquinas/bordes del tablero
-    // TODO: cambiar a circulo alrededor del centro del tablero
+    // Estado inicial de los jugadores
+    setStartingPositions(state);
     for (int i = 0; i < config.num_players; i++) {
-        switch (i % 4) {
-            case 0: // esquina superior izquierda
-                movePlayer(state, i, 0, 0);
-                break;
-            case 1: // esquina inferior derecha
-                movePlayer(state, i, state->width - 1, state->height - 1);
-                break;
-            case 2: // esquina superior derecha
-                movePlayer(state, i, state->width - 1, 0);
-                break;
-            case 3: // esquina inferior izquierda
-                movePlayer(state, i, 0, state->height - 1);
-                break;
-        }
         state->jugadores[i].puntaje = 0;
         state->jugadores[i].stuck = 0;
         state->jugadores[i].validRequests = 0;
         state->jugadores[i].invalidRequests = 0;
-
     }
 
     // ----- shm sync -----

@@ -20,7 +20,7 @@ $(BUILD)/:
 	mkdir -p $(BUILD)/
 
 $(BUILD)/master: $(SRC)/master.c | $(BUILD)/
-	$(CC) $(CFLAGS) -o $@ $< -lrt -pthread
+	$(CC) $(CFLAGS) -o $@ $< -lrt -pthread -lm
 
 $(BUILD)/vista: $(SRC)/vista.c | $(BUILD)/
 	$(CC) $(CFLAGS) -o $@ $< -lrt -pthread
