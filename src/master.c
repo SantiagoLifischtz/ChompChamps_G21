@@ -371,9 +371,6 @@ int main(int argc, char *argv[]) {
         //            current_time - last_movement_time, config.timeout);
         //     break;
         // }
-
-        sem_wait(&sync->C);
-        sem_wait(&sync->D);
         
         // Procesar movimientos de jugadores que están listos
         for (int i = 0; i < config.num_players; i++) {
@@ -389,6 +386,10 @@ int main(int argc, char *argv[]) {
                 active_players[i] = 0;
                 continue;
             }
+
+            sem_wait(&sync->C);
+            sem_wait(&sync->D);
+            sem_post(&sync->C);
             
             unsigned short x = state->jugadores[i].x;
             unsigned short y = state->jugadores[i].y;
@@ -455,11 +456,10 @@ int main(int argc, char *argv[]) {
             else {
                 sem_post(&(sync->G[i]));
             }
+
+            sem_post(&sync->D);
         }
         steps++;
-
-        sem_post(&sync->D);
-        sem_post(&sync->C);
 
         // Si no hay jugadores activos, terminar
         if (active_count == 0) {

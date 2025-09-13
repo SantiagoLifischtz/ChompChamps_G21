@@ -17,11 +17,19 @@ void printAnimatedBar(int length, int frame) {
     frame = ((frame % length) + length) % length;
     for (int i = 0; i < length; i++)
     {
-        if (i%10 != frame%10) putchar('=');
+        if (i%10 != frame%10) putchar('-');
         else putchar('|');
         putchar(' ');
     }
     putchar('\n');
+}
+
+void printEndgameBar(int length) {
+    for (int i = 0; i < length-1; i++)
+    {
+        printf("==");
+    }
+    printf("=\n");
 }
 
 void drawBoard(game_state_t *state) {
@@ -74,7 +82,7 @@ void printStatus(game_state_t *state) {
                 state->jugadores[i].x,
                 state->jugadores[i].y);
         if (state->jugadores[i].stuck) {
-            printf(" (x_x)");
+            printf(" %s(x_x)\033[0m",colors[i]);
         }
         putchar('\n');
     }
@@ -94,7 +102,9 @@ void gameEnded(game_state_t *state) {
             winner = i;
         }
     }
+    printEndgameBar(state->width);
     drawBoard(state);
+    printEndgameBar(state->width);
     printf("\n=== Ganador: [ %s%s\033[0m ] ===\n", colors[winner], state->jugadores[winner].nombre);
 }
 
@@ -138,7 +148,7 @@ int main() {
 
         printf("\n=== Estado del juego ===\n");
         printStatus(state);
-
+        
         printAnimatedBar(state->width,-1-frameCounter);
         drawBoard(state);
         printAnimatedBar(state->width,frameCounter++);

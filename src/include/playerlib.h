@@ -8,5 +8,7 @@ game_sync_t *getSync();
 jugador_t *getPlayer(game_state_t *state, pid_t playerPid, int *playerListIndex);
 int freeNeighborCount(game_state_t *state, unsigned short x, unsigned short y);
 char (*getMoveMap())[3];
+int squareDistanceToPlayer(game_state_t *state, int targetPlayerId, unsigned short fromX, unsigned short fromY);
+int sqrDistClosestOther(game_state_t *state, unsigned int callerId, unsigned short fromX, unsigned short fromY);
 
 #endif
