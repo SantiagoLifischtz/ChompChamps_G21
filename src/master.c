@@ -255,6 +255,9 @@ int main(int argc, char *argv[]) {
                 break;
         }
         state->jugadores[i].puntaje = 0;
+        state->jugadores[i].stuck = 0;
+        state->jugadores[i].validRequests = 0;
+        state->jugadores[i].invalidRequests = 0;
 
     }
 
@@ -316,7 +319,7 @@ int main(int argc, char *argv[]) {
             jugadores[i] = pid;
             state->jugadores[i].pid = pid;
             close(pipes[i][1]); // master no escribe en este pipe
-            snprintf(state->jugadores[i].nombre, PLAYER_NAME_LENGTH, textAfter('/',config.player_paths[i]));
+            snprintf(state->jugadores[i].nombre, PLAYER_NAME_LENGTH, "%s", textAfter('/',config.player_paths[i]));
         } else {
             perror("fork jugador");
             exit(1);
