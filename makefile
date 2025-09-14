@@ -1,6 +1,6 @@
 CC=gcc
 SRC=src
-CFLAGS=-Wall -Wextra -std=c99 -g -I$(SRC)/include -fsanitize=address
+CFLAGS=-Wall -Wextra -std=c99 -g -I$(SRC)/include -lm
 BUILD=build
 PLAYERS_SRC=$(wildcard $(SRC)/players/*.c)
 PLAYERS_BIN=$(patsubst $(SRC)/players/%.c,$(BUILD)/players/%,$(PLAYERS_SRC))

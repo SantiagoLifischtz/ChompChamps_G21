@@ -6,9 +6,9 @@
 #include <signal.h>
 #include <playerlib.h>
 
-#define BFS_DEPTH 5
-#define FREEDOM_BIAS 9
-#define SCORE_BIAS 1
+#define BFS_DEPTH 8
+#define FREEDOM_BIAS 1
+#define SCORE_BIAS 0
 
 // Global variables for cleanup
 static game_state_t *g_state = NULL;
@@ -71,8 +71,8 @@ int main() {
 
                 if (state->tablero[y * state->width + x] <= 0) continue;
 
-                int freedom = freeNeighborCount(state, x, y);
-                int potentialScore = bfsExplore(state, x, y, BFS_DEPTH, NULL);
+                int freedom;
+                int potentialScore = bfsExplore(state, x, y, BFS_DEPTH, &freedom);
 
                 double rating = FREEDOM_BIAS*freedom + SCORE_BIAS*potentialScore;
 

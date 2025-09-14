@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <playerlib.h>
+#include <math.h>
+
+#define EPSILON 1e-4
 
 int main() {
     game_state_t *state = getState();
@@ -47,7 +50,7 @@ int main() {
                 float freeSpaces = freeNeighborCount(state, x, y) * multiplier;
                 
                 
-                if (freeSpaces == max) {
+                if (fabs(freeSpaces - max) < EPSILON) {
                     ties[tieIndex][0] = offX;
                     ties[tieIndex][1] = offY;
                     tieIndex++;
