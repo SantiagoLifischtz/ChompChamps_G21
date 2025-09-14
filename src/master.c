@@ -1,5 +1,18 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+
+/**
+ * @file master.c
+ * @brief Módulo maestro del juego ChompChamps
+ * 
+ * Este módulo actúa como el coordinador principal del juego, manejando la lógica
+ * del juego, la sincronización entre jugadores, la vista y el estado global.
+ * Utiliza memoria compartida y semáforos para la comunicación entre procesos.
+ * 
+ * @author Grupo 21
+ * @date 2025
+ */
+
 #define _POSIX_C_SOURCE 200809L
 #define _DEFAULT_SOURCE
 #include <stdio.h>
@@ -18,6 +31,7 @@
 #include <structs.h>
 #include <math.h>
 
+// Constantes de configuración del juego
 #define MAX_JUGADORES 9
 #define MIN_JUGADORES 1
 #define DEFAULT_NUM_JUGADORES 2
@@ -30,20 +44,27 @@
 #define DEFAULT_DELAY 200
 #define DEFAULT_TIMEOUT 1
 
-// Estructura para parámetros de configuración
+/**
+ * @brief Estructura para parámetros de configuración del juego
+ */
 typedef struct {
-    int width;
-    int height;
-    int delay;
-    int timeout;
-    unsigned int seed;
-    char *view_path;
-    char *player_paths[MAX_JUGADORES];
-    int num_players;
+    int width;                                    ///< Ancho del tablero
+    int height;                                   ///< Alto del tablero
+    int delay;                                    ///< Delay entre movimientos en ms
+    int timeout;                                  ///< Timeout para movimientos en segundos
+    unsigned int seed;                            ///< Semilla para generación aleatoria
+    char *view_path;                              ///< Ruta del binario de la vista
+    char *player_paths[MAX_JUGADORES];            ///< Rutas de los binarios de jugadores
+    int num_players;                              ///< Número de jugadores
 } config_t;
+
 // -----------------------
 
-// Función para mostrar ayuda
+/**
+ * @brief Muestra la ayuda del programa
+ * 
+ * @param program_name Nombre del programa para mostrar en la ayuda
+ */
 void show_help(const char *program_name) {
     printf("Uso: %s [opciones] -p jugador1 [jugador2] ...\n", program_name);
     printf("Opciones:\n");
@@ -57,7 +78,14 @@ void show_help(const char *program_name) {
     printf("  --help      Mostrar esta ayuda\n");
 }
 
-// Función para parsear argumentos
+/**
+ * @brief Parsea los argumentos de línea de comandos
+ * 
+ * @param argc Número de argumentos
+ * @param argv Array de argumentos
+ * @param config Estructura de configuración a llenar
+ * @return 0 en éxito, 1 para --help, -1 en error
+ */
 int parse_arguments(int argc, char *argv[], config_t *config) {
     // Inicializar configuración por defecto
     config->width = DEFAULT_WIDTH;
@@ -153,7 +181,13 @@ int parse_arguments(int argc, char *argv[], config_t *config) {
     return 0;
 }
 
-// Retorna el contenido de un string que haya luego de la ultima aparicion de un separador
+/**
+ * @brief Retorna el contenido de un string después de la última aparición de un separador
+ * 
+ * @param separator Carácter separador a buscar
+ * @param str String en el que buscar
+ * @return Puntero al contenido después del último separador
+ */
 char *textAfter(char separator, char *str) {
     char *lastSeparator = NULL;
     while (*str)
@@ -166,9 +200,15 @@ char *textAfter(char separator, char *str) {
     return lastSeparator+1;
 }
 
-// Mueve un jugador a una posicion y la ocupa en el tablero. Retorna:
-// - 0 si el movimiento es invalido
-// - El puntaje que habia en esa posicion antes de ocuparla si es valido
+/**
+ * @brief Mueve un jugador a una posición y la ocupa en el tablero
+ * 
+ * @param state Estado actual del juego
+ * @param playerId ID del jugador a mover
+ * @param targetX Coordenada X de destino
+ * @param targetY Coordenada Y de destino
+ * @return 0 si el movimiento es inválido, el puntaje de la posición si es válido
+ */
 int movePlayer(game_state_t *state, int playerId, unsigned short targetX, unsigned short targetY) {
     if (targetX >= state->width || targetY >= state->height) {
         return 0;
@@ -183,7 +223,14 @@ int movePlayer(game_state_t *state, int playerId, unsigned short targetX, unsign
     return score;
 }
 
-// Retorna 1 si es posible salir de la posicion (x,y), 0 si no.
+/**
+ * @brief Verifica si es posible escapar de una posición
+ * 
+ * @param state Estado actual del juego
+ * @param centerX Coordenada X central
+ * @param centerY Coordenada Y central
+ * @return 1 si es escapable, 0 si no
+ */
 int isEscapable(game_state_t *state, unsigned short centerX, unsigned short centerY) {
     for (int offY = -1; offY <= 1; offY++)
     {
@@ -201,12 +248,26 @@ int isEscapable(game_state_t *state, unsigned short centerX, unsigned short cent
     return 0;
 }
 
-// Retorna 1 si el jugador esta atascado, 0 si no.
+/**
+ * @brief Verifica si un jugador está atascado
+ * 
+ * @param state Estado actual del juego
+ * @param playerId ID del jugador a verificar
+ * @return 1 si está atascado, 0 si no
+ */
 int isStuck(game_state_t *state, int playerId) {
     jugador_t player = state->jugadores[playerId];
     return player.stuck || !isEscapable(state, player.x, player.y);
 }
 
+/**
+ * @brief Establece las posiciones iniciales de los jugadores en el tablero
+ * 
+ * Coloca a los jugadores en posiciones distribuidas circularmente alrededor del centro
+ * del tablero, evitando que empiecen en la misma posición.
+ * 
+ * @param state Estado actual del juego
+ */
 void setStartingPositions(game_state_t *state) {
     double angleStep = 2*M_PI/state->num_jugadores;
     double angle = (rand() / (double) RAND_MAX) * 2*M_PI;
@@ -222,9 +283,431 @@ void setStartingPositions(game_state_t *state) {
         movePlayer(state, i, x, y);
         angle += angleStep;
     }
-    
 }
 
+/**
+ * @brief Inicializa la memoria compartida para el estado del juego y sincronización
+ * 
+ * @param state Puntero al puntero del estado del juego
+ * @param sync Puntero al puntero de la estructura de sincronización
+ * @param config Configuración del juego
+ * @return 0 en éxito, -1 en error
+ */
+int initialize_shared_memory(game_state_t **state, game_sync_t **sync, const config_t *config) {
+    if (!state || !sync || !config) {
+        fprintf(stderr, "Error: Parámetros inválidos para initialize_shared_memory\n");
+        return -1;
+    }
+    
+    // Crear memoria compartida para el estado del juego
+    int shm_state_fd = shm_open("/game_state", O_CREAT | O_RDWR, 0666);
+    if (shm_state_fd == -1) {
+        perror("shm_open game_state");
+        return -1;
+    }
+    
+    if (ftruncate(shm_state_fd, sizeof(game_state_t)) == -1) {
+        perror("ftruncate game_state");
+        close(shm_state_fd);
+        return -1;
+    }
+    
+    *state = mmap(NULL, sizeof(game_state_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm_state_fd, 0);
+    if (*state == MAP_FAILED) {
+        perror("mmap game_state");
+        close(shm_state_fd);
+        return -1;
+    }
+
+    // Inicializar estado del juego
+    (*state)->width = config->width;
+    (*state)->height = config->height;
+    (*state)->num_jugadores = config->num_players;
+    (*state)->terminado = 0;
+
+    // Generar tablero inicial
+    srand(config->seed);
+    for (int y = 0; y < (*state)->height; y++) {
+        for (int x = 0; x < (*state)->width; x++) {
+            (*state)->tablero[y * (*state)->width + x] = 1 + rand() % 9;
+        }
+    }
+    
+    // Establecer posiciones iniciales de jugadores
+    setStartingPositions(*state);
+    for (int i = 0; i < config->num_players; i++) {
+        (*state)->jugadores[i].puntaje = 0;
+        (*state)->jugadores[i].stuck = 0;
+        (*state)->jugadores[i].validRequests = 0;
+        (*state)->jugadores[i].invalidRequests = 0;
+    }
+
+    // Crear memoria compartida para sincronización
+    int shm_sync_fd = shm_open("/game_sync", O_CREAT | O_RDWR, 0666);
+    if (shm_sync_fd == -1) {
+        perror("shm_open game_sync");
+        munmap(*state, sizeof(game_state_t));
+        close(shm_state_fd);
+        return -1;
+    }
+    
+    if (ftruncate(shm_sync_fd, sizeof(game_sync_t)) == -1) {
+        perror("ftruncate game_sync");
+        close(shm_sync_fd);
+        munmap(*state, sizeof(game_state_t));
+        close(shm_state_fd);
+        return -1;
+    }
+    
+    *sync = mmap(NULL, sizeof(game_sync_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm_sync_fd, 0);
+    if (*sync == MAP_FAILED) {
+        perror("mmap game_sync");
+        close(shm_sync_fd);
+        munmap(*state, sizeof(game_state_t));
+        close(shm_state_fd);
+        return -1;
+    }
+
+    return 0;
+}
+
+/**
+ * @brief Inicializa todos los semáforos necesarios para la sincronización
+ * 
+ * @param sync Estructura de sincronización
+ * @param num_players Número de jugadores
+ * @return 0 en éxito, -1 en error
+ */
+int initialize_semaphores(game_sync_t *sync, int num_players) {
+    if (!sync || num_players <= 0 || num_players > MAX_JUGADORES) {
+        fprintf(stderr, "Error: Parámetros inválidos para initialize_semaphores\n");
+        return -1;
+    }
+    
+    if (sem_init(&sync->A, 1, 0) != 0) {
+        perror("sem_init A");
+        return -1;
+    }
+    if (sem_init(&sync->B, 1, 0) != 0) {
+        perror("sem_init B");
+        sem_destroy(&sync->A);
+        return -1;
+    }
+    if (sem_init(&sync->C, 1, 1) != 0) {
+        perror("sem_init C");
+        sem_destroy(&sync->A);
+        sem_destroy(&sync->B);
+        return -1;
+    }
+    if (sem_init(&sync->D, 1, 1) != 0) {
+        perror("sem_init D");
+        sem_destroy(&sync->A);
+        sem_destroy(&sync->B);
+        sem_destroy(&sync->C);
+        return -1;
+    }
+    if (sem_init(&sync->E, 1, 1) != 0) {
+        perror("sem_init E");
+        sem_destroy(&sync->A);
+        sem_destroy(&sync->B);
+        sem_destroy(&sync->C);
+        sem_destroy(&sync->D);
+        return -1;
+    }
+    
+    sync->F = 0;
+    
+    for (int i = 0; i < num_players; i++) {
+        if (sem_init(&(sync->G[i]), 1, 0) != 0) {
+            perror("sem_init G");
+            // Limpiar semáforos ya inicializados
+            sem_destroy(&sync->A);
+            sem_destroy(&sync->B);
+            sem_destroy(&sync->C);
+            sem_destroy(&sync->D);
+            sem_destroy(&sync->E);
+            for (int j = 0; j < i; j++) {
+                sem_destroy(&(sync->G[j]));
+            }
+            return -1;
+        }
+    }
+    
+    return 0;
+}
+
+/**
+ * @brief Lanza el proceso de vista
+ * 
+ * @param vista Puntero al PID del proceso de vista
+ * @param view_path Ruta del binario de la vista
+ * @return 0 en éxito, -1 en error
+ */
+int launch_view_process(pid_t *vista, const char *view_path) {
+    if (!vista || !view_path) {
+        fprintf(stderr, "Error: Parámetros inválidos para launch_view_process\n");
+        return -1;
+    }
+    
+    *vista = fork();
+    if (*vista == 0) {
+        // Proceso hijo = vista
+        execl(view_path, "vista", NULL);
+        perror("execl vista");
+        exit(1);
+    } else if (*vista < 0) {
+        perror("fork vista");
+        return -1;
+    }
+    return 0;
+}
+
+/**
+ * @brief Lanza los procesos de jugadores
+ * 
+ * @param jugadores Array de PIDs de jugadores
+ * @param pipes Array de pipes para comunicación con jugadores
+ * @param config Configuración del juego
+ * @param state Estado del juego
+ * @return 0 en éxito, -1 en error
+ */
+int launch_player_processes(pid_t *jugadores, int pipes[MAX_JUGADORES][2], const config_t *config, game_state_t *state) {
+    if (!jugadores || !pipes || !config || !state) {
+        fprintf(stderr, "Error: Parámetros inválidos para launch_player_processes\n");
+        return -1;
+    }
+    
+    for (int i = 0; i < config->num_players; i++) {
+        if (pipe(pipes[i]) == -1) {
+            perror("pipe");
+            return -1;
+        }
+        
+        pid_t pid = fork();
+        if (pid == 0) {
+            // Proceso hijo = jugador
+            
+            // CRÍTICO: Cerrar TODOS los pipes heredados de otros jugadores
+            for (int j = 0; j < i; j++) {
+                close(pipes[j][0]); // cerrar lectura de pipes anteriores
+            }
+            
+            // Cerrar extremo de lectura del pipe propio
+            close(pipes[i][0]);
+            
+            // Redirigir stdout al extremo de escritura del pipe
+            dup2(pipes[i][1], STDOUT_FILENO);
+            
+            // Cerrar el descriptor original después del dup2
+            close(pipes[i][1]);
+
+            // Usar la ruta del jugador especificada en la configuración
+            char player_name[64];
+            snprintf(player_name, sizeof(player_name), "jugador%d", i);
+            execl(config->player_paths[i], player_name, NULL);
+            perror("execl jugador");
+            exit(1); // solo llega si execl falla
+        } else if (pid > 0) {
+            jugadores[i] = pid;
+            state->jugadores[i].pid = pid;
+            close(pipes[i][1]); // Master no escribe en este pipe
+            snprintf(state->jugadores[i].nombre, PLAYER_NAME_LENGTH, "%s", textAfter('/', config->player_paths[i]));
+        } else {
+            perror("fork jugador");
+            return -1;
+        }
+    }
+    return 0;
+}
+
+/**
+ * @brief Procesa los movimientos de los jugadores en una iteración
+ * 
+ * @param state Estado del juego
+ * @param sync Estructura de sincronización
+ * @param pipes Pipes de comunicación con jugadores
+ * @param active_players Array de jugadores activos (puede ser NULL)
+ * @param config Configuración del juego
+ * @param last_movement_time Tiempo del último movimiento
+ * @return 0 en éxito, -1 en error
+ */
+int process_player_moves(game_state_t *state, game_sync_t *sync, int pipes[MAX_JUGADORES][2], 
+                        int active_players[], const config_t *config, time_t *last_movement_time) {
+    if (!state || !sync || !pipes || !config || !last_movement_time) {
+        fprintf(stderr, "Error: Parámetros inválidos para process_player_moves\n");
+        return -1;
+    }
+    
+    // Configurar select para leer de todos los jugadores
+    fd_set readfds;
+    int max_fd = -1;
+    
+    FD_ZERO(&readfds);
+    int active_count = 0;
+    for (int i = 0; i < config->num_players; i++) {
+        if (active_players == NULL || active_players[i]) {
+            FD_SET(pipes[i][0], &readfds);
+            if (pipes[i][0] > max_fd) max_fd = pipes[i][0];
+            active_count++;
+        }
+    }
+    
+    struct timeval timeout = {0, 0};
+    int ready = select(max_fd + 1, &readfds, NULL, NULL, &timeout);
+    if (ready < 0) {
+        perror("select error");
+        return -1;
+    }
+    
+    // Procesar movimientos de jugadores listos
+    for (int i = 0; i < config->num_players; i++) {
+        if ((active_players != NULL && !active_players[i]) || !FD_ISSET(pipes[i][0], &readfds)) {
+            continue;
+        }
+        
+        unsigned char move;
+        ssize_t n = read(pipes[i][0], &move, sizeof(move));
+        if (n <= 0) {
+            // Jugador terminó o error de lectura
+            printf("[Master] Jugador %d terminó o se desconectó\n", i);
+            if (active_players != NULL) {
+                active_players[i] = 0;
+            }
+            continue;
+        }
+
+        // Sincronización para acceso al estado
+        sem_wait(&sync->C);
+        sem_wait(&sync->D);
+        sem_post(&sync->C);
+        
+        unsigned short x = state->jugadores[i].x;
+        unsigned short y = state->jugadores[i].y;
+        unsigned short nx = x, ny = y;
+
+        // Interpretar movimiento
+        switch (move) {
+            case 0: ny--; break;                    // arriba
+            case 1: { ny--; nx++; } break;          // arriba-derecha
+            case 2: nx++; break;                    // derecha
+            case 3: { ny++; nx++; } break;          // abajo-derecha
+            case 4: ny++; break;                    // abajo
+            case 5: { ny++; nx--; } break;          // abajo-izquierda
+            case 6: nx--; break;                    // izquierda
+            case 7: { ny--; nx--; } break;          // arriba-izquierda
+            default: break;                         // movimiento inválido
+        }
+
+        // Verificar y ejecutar movimiento
+        int moveResult = movePlayer(state, i, nx, ny);
+        
+        if (moveResult > 0) {
+            state->jugadores[i].validRequests++;
+            state->jugadores[i].puntaje += moveResult;
+            *last_movement_time = time(NULL);
+        } else {
+            state->jugadores[i].invalidRequests++;
+        }
+
+        // Verificar si el jugador está atascado
+        if (isStuck(state, i)) {
+            state->jugadores[i].stuck = 1;
+            if (active_players != NULL) {
+                active_players[i] = 0;
+            }
+        } else {
+            sem_post(&(sync->G[i]));
+        }
+
+        sem_post(&sync->D);
+    }
+
+    // Verificar si el juego debe terminar
+    if (active_players != NULL) {
+        int remaining_players = 0;
+        for (int i = 0; i < config->num_players; i++) {
+            if (active_players[i]) remaining_players++;
+        }
+        if (remaining_players == 0) {
+            state->terminado = 1;
+        }
+    }
+    
+    // Verificar timeout global
+    time_t current_time = time(NULL);
+    if (config->timeout > 0 && (current_time - *last_movement_time) >= config->timeout) {
+        state->terminado = 1;
+    }
+
+    return 0;
+}
+
+/**
+ * @brief Limpia todos los recursos utilizados por el juego
+ * 
+ * @param state Estado del juego
+ * @param sync Estructura de sincronización
+ * @param jugadores Array de PIDs de jugadores
+ * @param vista PID del proceso de vista
+ * @param pipes Array de pipes
+ * @param num_players Número de jugadores
+ */
+void cleanup_resources(game_state_t *state, game_sync_t *sync, pid_t *jugadores, 
+                      pid_t vista, int pipes[MAX_JUGADORES][2], int num_players) {
+    // Terminar procesos de jugadores
+    for (int i = 0; i < num_players; i++) {
+        if (jugadores[i] > 0) {
+            kill(jugadores[i], SIGTERM);
+            waitpid(jugadores[i], NULL, 0);
+        }
+    }
+    
+    // Terminar proceso de vista
+    if (vista > 0) {
+        kill(vista, SIGTERM);
+        waitpid(vista, NULL, 0);
+    }
+
+    // Cerrar pipes
+    for (int i = 0; i < num_players; i++) {
+        close(pipes[i][0]);
+    }
+
+    // Destruir semáforos
+    if (sync != NULL) {
+        sem_destroy(&sync->A);
+        sem_destroy(&sync->B);
+        sem_destroy(&sync->C);
+        sem_destroy(&sync->D);
+        sem_destroy(&sync->E);
+        for (int i = 0; i < num_players; i++) {
+            sem_destroy(&(sync->G[i]));
+        }
+    }
+
+    // Desmapear memoria compartida
+    if (state != NULL) {
+        munmap(state, sizeof(game_state_t));
+    }
+    if (sync != NULL) {
+        munmap(sync, sizeof(game_sync_t));
+    }
+    
+    // Desvincular memoria compartida
+    shm_unlink("/game_state");
+    shm_unlink("/game_sync");
+}
+
+/**
+ * @brief Función principal del maestro del juego
+ * 
+ * Coordina la ejecución del juego, inicializa recursos compartidos,
+ * lanza procesos de jugadores y vista, y maneja la lógica principal del juego.
+ * 
+ * @param argc Número de argumentos de línea de comandos
+ * @param argv Array de argumentos de línea de comandos
+ * @return 0 en éxito, 1 en error
+ */
 int main(int argc, char *argv[]) {
     config_t config;
     
@@ -237,302 +720,75 @@ int main(int argc, char *argv[]) {
     int pipes[MAX_JUGADORES][2];
     pid_t jugadores[MAX_JUGADORES];
     pid_t vista = -1;
+    game_state_t *state = NULL;
+    game_sync_t *sync = NULL;
 
-    // ----- shm estado -----
-    int shm_state_fd = shm_open("/game_state", O_CREAT | O_RDWR, 0666);
-    ftruncate(shm_state_fd, sizeof(game_state_t));
-    game_state_t *state = mmap(NULL, sizeof(game_state_t),
-                               PROT_READ | PROT_WRITE, MAP_SHARED,
-                               shm_state_fd, 0);
-
-    state->width = config.width;
-    state->height = config.height;
-    state->num_jugadores = config.num_players;
-    state->terminado = 0;
-
-    // tablero inicial
-    srand(config.seed);
-    for (int y=0; y<state->height; y++) {
-        for (int x=0; x<state->width; x++) {
-            state->tablero[y * state->width + x] = 1 + rand() % 9;
-        }
-    }
-    
-    // Estado inicial de los jugadores
-    setStartingPositions(state);
-    for (int i = 0; i < config.num_players; i++) {
-        state->jugadores[i].puntaje = 0;
-        state->jugadores[i].stuck = 0;
-        state->jugadores[i].validRequests = 0;
-        state->jugadores[i].invalidRequests = 0;
+    // Inicializar memoria compartida
+    if (initialize_shared_memory(&state, &sync, &config) != 0) {
+        fprintf(stderr, "Error: No se pudo inicializar la memoria compartida\n");
+        return 1;
     }
 
-    // ----- shm sync -----
-    int shm_sync_fd = shm_open("/game_sync", O_CREAT | O_RDWR, 0666);
-    ftruncate(shm_sync_fd, sizeof(game_sync_t));
-    game_sync_t *sync = mmap(NULL, sizeof(game_sync_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm_sync_fd, 0);
-
-    sem_init(&sync->A, 1, 0);
-    sem_init(&sync->B, 1, 0);
-
-    sem_init(&sync->C, 1, 1);
-    sem_init(&sync->D, 1, 1);
-    sem_init(&sync->E, 1, 1);
-    sync->F = 0;
-    for (int i = 0; i < config.num_players; i++) {
-        sem_init(&(sync->G[i]), 1, 0);
+    // Inicializar semáforos
+    if (initialize_semaphores(sync, config.num_players) != 0) {
+        fprintf(stderr, "Error: No se pudieron inicializar los semáforos\n");
+        cleanup_resources(state, sync, jugadores, vista, pipes, config.num_players);
+        return 1;
     }
 
-    // ----- vista -----
+    // Lanzar proceso de vista si se envió por argumentos
     if (config.view_path != NULL) {
-        vista = fork();
-        if (vista == 0) {
-            // hijo = vista
-            execl(config.view_path, "vista", NULL);
-            perror("execl vista");
-            exit(1);
+        if (launch_view_process(&vista, config.view_path) != 0) {
+            fprintf(stderr, "Error: No se pudo lanzar el proceso de vista\n");
+            cleanup_resources(state, sync, jugadores, vista, pipes, config.num_players);
+            return 1;
         }
     }
 
-    // ----- pipes + jugadores -----
-    for (int i = 0; i < config.num_players; i++) {
-        pipe(pipes[i]);
-        pid_t pid = fork();
-        if (pid == 0) {
-            // hijo = jugador
-            
-            // CRÍTICO: Cerrar TODOS los pipes heredados de otros jugadores
-            for (int j = 0; j < i; j++) {
-                close(pipes[j][0]); // cerrar lectura de pipes anteriores
-            }
-            
-            // Cerrar el extremo de lectura del pipe propio
-            close(pipes[i][0]);
-            
-            // Redirigir stdout al extremo de escritura del pipe
-            dup2(pipes[i][1], STDOUT_FILENO);
-            
-            // Cerrar el descriptor original después del dup2
-            close(pipes[i][1]);
-
-            // Usar la ruta del jugador especificada en la configuración
-            char player_name[64];
-            snprintf(player_name, sizeof(player_name), "jugador%d", i);
-            execl(config.player_paths[i], player_name, NULL);
-            perror("execl jugador");
-            exit(1); // solo llega si execl falla
-        } else if (pid > 0) {
-            jugadores[i] = pid;
-            state->jugadores[i].pid = pid;
-            close(pipes[i][1]); // master no escribe en este pipe
-            snprintf(state->jugadores[i].nombre, PLAYER_NAME_LENGTH, "%s", textAfter('/',config.player_paths[i]));
-        } else {
-            perror("fork jugador");
-            exit(1);
-        }
+    // Lanzar procesos de jugadores
+    if (launch_player_processes(jugadores, pipes, &config, state) != 0) {
+        fprintf(stderr, "Error: No se pudieron lanzar los procesos de jugadores\n");
+        cleanup_resources(state, sync, jugadores, vista, pipes, config.num_players);
+        return 1;
     }
 
+    // Enviar estado inicial a la vista si existe
     if (config.view_path != NULL) {
-        // Enviar estado inicial a la vista
         sem_post(&sync->A);
         sem_wait(&sync->B);
     }
 
-    // ----- bucle master -----
-    int steps = 0;
-    int active_players[MAX_JUGADORES]; // Array para rastrear jugadores activos
-
-    // Inicializar todos los jugadores como activos
+    // Inicializar jugadores como activos
+    int active_players[MAX_JUGADORES];
     for (int i = 0; i < config.num_players; i++) {
-        active_players[i] = 1;
         sem_post(&(sync->G[i]));
+        active_players[i] = 1;
     }
 
     if (config.delay > 0) {
         usleep(config.delay * 1000);
     }
-
-    time_t last_movement_time = time(NULL); // Tiempo del último movimiento de cualquier jugador    
+    
+    // Bucle principal del juego
+    time_t last_movement_time = time(NULL);
     while (!state->terminado) {
-
-        // Configurar timeout para lectura de todos los jugadores
-        fd_set readfds;
-        int max_fd = -1;
-        
-        FD_ZERO(&readfds);
-        int active_count = 0;
-        for (int i = 0; i < config.num_players; i++) {
-            if (active_players[i]) {
-                FD_SET(pipes[i][0], &readfds);
-                if (pipes[i][0] > max_fd) max_fd = pipes[i][0];
-                active_count++;
-            }
-        }
-        
-        struct timeval timeout = {0,0};
-        int ready = select(max_fd + 1, &readfds, NULL, NULL, &timeout);
-        if (ready < 0) {
-            perror("select error");
+        if (process_player_moves(state, sync, pipes, active_players, &config, &last_movement_time) != 0) {
             break;
         }
-        // else if (ready == 0) {
-        //     // Timeout - no hay movimientos en el tiempo esperado
-        //     printf("[Master] Timeout global alcanzado (%ld segundos sin movimientos, límite: %d)\n", 
-        //            current_time - last_movement_time, config.timeout);
-        //     break;
-        // }
         
-        // Procesar movimientos de jugadores que están listos
-        for (int i = 0; i < config.num_players; i++) {
-            if (!active_players[i] || !FD_ISSET(pipes[i][0], &readfds)) {
-                continue; // Este jugador no está activo o no tiene movimiento listo
-            }
-            
-            unsigned char move;
-            ssize_t n = read(pipes[i][0], &move, sizeof(move));
-            if (n <= 0) {
-                // Jugador terminó o error de lectura - marcar como inactivo
-                printf("[Master] Jugador %d terminó o se desconectó\n", i);
-                active_players[i] = 0;
-                continue;
-            }
-
-            sem_wait(&sync->C);
-            sem_wait(&sync->D);
-            sem_post(&sync->C);
-            
-            unsigned short x = state->jugadores[i].x;
-            unsigned short y = state->jugadores[i].y;
-            unsigned short nx = x, ny = y;
-
-            // interpretar movimiento (0 arriba, 2 derecha, 4 abajo, 6 izquierda, 1 arriba-derecha, 3 abajo-derecha, 5 abajo-izquierda, 7 arriba-izquierda)
-            switch (move) {
-                case 0: // arriba
-                    ny--;
-                    break;
-                case 1: // arriba-derecha
-                    { ny--; nx++; }
-                    break;
-                case 2: // derecha
-                    nx++;
-                    break;
-                case 3: // abajo-derecha
-                    { ny++; nx++; }
-                    break;
-                case 4: // abajo
-                    ny++;
-                    break;
-                case 5: // abajo-izquierda
-                    { ny++; nx--; }
-                    break;
-                case 6: // izquierda
-                    nx--;
-                    break;
-                case 7: // arriba-izquierda
-                    { ny--; nx--; }
-                    break;
-                default:
-                    // movimiento inválido, no hacer nada
-                    break;
-            }
-
-            // Verificar si la posición de destino es válida
-            int moveResult = movePlayer(state, i, nx, ny);
-            
-            // Verificar si hay otro jugador en la posición de destino
-            // int posicion_ocupada = 0;
-            // for (int j = 0; j < config.num_players; j++) {
-            //     if (j != i && state->jugadores[j].x == nx && state->jugadores[j].y == ny) {
-            //         posicion_ocupada = 1;
-            //         break;
-            //     }
-            // }
-            // este checkeo es innecesario
-            
-            // Solo permitir el movimiento si la posición tiene un valor positivo
-            if (moveResult > 0) {
-                state->jugadores[i].validRequests++;
-                state->jugadores[i].puntaje += moveResult;
-                last_movement_time = time(NULL);
-            } else {
-                // Movimiento invalido
-                state->jugadores[i].invalidRequests++;
-            }
-
-            if (isStuck(state, i)) {
-                state->jugadores[i].stuck = 1;
-                active_players[i] = 0;
-            }
-            else {
-                sem_post(&(sync->G[i]));
-            }
-
-            sem_post(&sync->D);
-        }
-        steps++;
-
-        // Si no hay jugadores activos, terminar
-        if (active_count == 0) {
-            state->terminado = 1;
-        }
-        
-        // Calcular cuánto tiempo queda del timeout global
-        time_t current_time = time(NULL);
-        long remaining_timeout = config.timeout - (current_time - last_movement_time);
-        
-        // Si no queda tiempo, usar timeout de 0 para que select retorne inmediatamente
-        if (remaining_timeout <= 0) {
-            remaining_timeout = 0;
-            state->terminado = 1;
-        }
-
-        // avisar a vista (solo si hay vista activa)
+        // Avisar a vista si existe
         if (config.view_path != NULL) {
             sem_post(&sync->A);
             sem_wait(&sync->B);
         }
         
-        // El delay se ejecuta en cada ciclo del bucle principal, para pausar entre movimientos.
+        // Delay entre movimientos
         if (config.delay > 0) {
-            // sleep acepta segundos, usleep acepta microsegundos (1ms = 1000us)
             usleep(config.delay * 1000);
         }
     }
     
-    // Terminar procesos activamente para evitar esperas innecesarias
-    for (int i = 0; i < config.num_players; i++) {
-        kill(jugadores[i], SIGTERM);
-        waitpid(jugadores[i], NULL, 0);
-    }
-    if (vista > 0) {
-        kill(vista, SIGTERM);
-        waitpid(vista, NULL, 0);
-    }
-
-    // Cerrar todos los pipes restantes en el master
-    for (int i = 0; i < config.num_players; i++) {
-        close(pipes[i][0]); // cerrar extremos de lectura
-        // pipes[i][1] ya están cerrados anteriormente
-    }
-
-    // Limpiar semáforos
-    sem_destroy(&sync->A);
-    sem_destroy(&sync->B);
-    sem_destroy(&sync->C);
-    sem_destroy(&sync->D);
-    sem_destroy(&sync->E);
-    for (int i = 0; i < config.num_players; i++) {
-        sem_destroy(&(sync->G[i]));
-    }
-
-    // Limpiar memoria compartida
-    munmap(state, sizeof(game_state_t));
-    munmap(sync, sizeof(game_sync_t));
-    close(shm_state_fd);
-    close(shm_sync_fd);
-    
-    shm_unlink("/game_state");
-    shm_unlink("/game_sync");
-
+    // Limpiar recursos
+    cleanup_resources(state, sync, jugadores, vista, pipes, config.num_players);
     return 0;
 }
