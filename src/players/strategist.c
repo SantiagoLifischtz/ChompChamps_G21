@@ -23,20 +23,22 @@ void cleanup_handler(int sig) {
     _exit(0);
 }
 
-// Calculate Manhattan distance between two points
-int manhattanDistance(int x1, int y1, int x2, int y2) {
-    return abs(x1 - x2) + abs(y1 - y2);
+// Calculate Chebyshev distance between two points
+int chebyshevDistance(int x1, int y1, int x2, int y2) {
+    int dx = abs(x2 - x1);
+    int dy = abs(y2 - y1);
+    return dx > dy ? dx : dy;
 }
 
 // Calculate Voronoi territory for a given cell
 // Returns 1 if this player is closest, 0 otherwise
 int isVoronoiTerritory(game_state_t *state, unsigned int myPlayerId, int x, int y) {
-    int myDist = manhattanDistance(state->jugadores[myPlayerId].x, 
+    int myDist = chebyshevDistance(state->jugadores[myPlayerId].x, 
                                   state->jugadores[myPlayerId].y, x, y);
     
     for (unsigned int i = 0; i < state->num_jugadores; i++) {
         if (i == myPlayerId) continue;
-        int otherDist = manhattanDistance(state->jugadores[i].x, 
+        int otherDist = chebyshevDistance(state->jugadores[i].x, 
                                          state->jugadores[i].y, x, y);
         if (otherDist <= myDist) {
             return 0; // Another player is closer or equidistant
@@ -169,7 +171,7 @@ int main() {
     }
     char (*moveMap)[3] = getMoveMap();
 
-    while(1) {
+    while(!playerData->stuck) {
         sem_wait(&(sync->G[playerListIndex]));
 
         sem_wait(&sync->C);
