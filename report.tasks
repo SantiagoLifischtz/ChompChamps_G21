@@ -1,0 +1,3 @@
+pvs-studio.com/en/docs/warnings/	1	err	Help: The documentation for all analyzer warnings is available here: https://pvs-studio.com/en/docs/warnings/.
+/root/ChompChamps_G21/src/players/panzer.c	50	note	V550 An odd precise comparison: freeSpaces == max. It's probably better to use a comparison with defined precision: fabs(A - B) < Epsilon.
+/root/ChompChamps_G21/src/vista.c	64	warn	V560 A part of conditional expression is always true: player_id >= 0.
