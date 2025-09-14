@@ -513,6 +513,22 @@ int main(int argc, char *argv[]) {
         // pipes[i][1] ya están cerrados anteriormente
     }
 
+    // Limpiar semáforos
+    sem_destroy(&sync->A);
+    sem_destroy(&sync->B);
+    sem_destroy(&sync->C);
+    sem_destroy(&sync->D);
+    sem_destroy(&sync->E);
+    for (int i = 0; i < config.num_players; i++) {
+        sem_destroy(&(sync->G[i]));
+    }
+
+    // Limpiar memoria compartida
+    munmap(state, sizeof(game_state_t));
+    munmap(sync, sizeof(game_sync_t));
+    close(shm_state_fd);
+    close(shm_sync_fd);
+    
     shm_unlink("/game_state");
     shm_unlink("/game_sync");
 

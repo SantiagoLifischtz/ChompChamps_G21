@@ -1,13 +1,41 @@
 #define _DEFAULT_SOURCE
 #include <stdio.h>
 #include <unistd.h>
+#include <signal.h>
 #include <playerlib.h>
 
+// Global variables for cleanup
+static game_state_t *g_state = NULL;
+static game_sync_t *g_sync = NULL;
+
+void cleanup_handler(int sig) {
+    if (g_state) releaseState(g_state);
+    if (g_sync) releaseSync(g_sync);
+    _exit(0);
+}
+
 int main() {
+    // Set up signal handlers for cleanup
+    signal(SIGTERM, cleanup_handler);
+    signal(SIGINT, cleanup_handler);
+    
     game_state_t *state = getState();
+    if (!state) return 1;
+    g_state = state; // Store for cleanup
+    
     game_sync_t *sync = getSync();
+    if (!sync) {
+        releaseState(state);
+        return 1;
+    }
+    g_sync = sync; // Store for cleanup
     int playerListIndex;
     jugador_t *playerData = getPlayer(state, getpid(), &playerListIndex);
+    if (!playerData) {
+        releaseState(state);
+        releaseSync(sync);
+        return 1;
+    }
     char (*moveMap)[3] = getMoveMap();
 
     while(1) {

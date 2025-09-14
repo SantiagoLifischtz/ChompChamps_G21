@@ -104,11 +104,11 @@ int *getPlayerOrder(game_state_t *state) {
 void printStatus(game_state_t *state, char *title) {
     printf("\n%28s\n", title);
     jugador_t *players = state->jugadores;
-    int *idOrder = getPlayerOrder(state);
-    if (!idOrder) return;
+    // int *idOrder = getPlayerOrder(state);
+    // if (!idOrder) return;
 
     for (size_t i = 0; i < state->num_jugadores; i++) {
-        int id = idOrder[i];
+        int id = i;
         printf("%s%-16s\033[0m | %4u p | (%2d,%2d) |",
                 colors[id],
                 players[id].nombre,
@@ -120,7 +120,7 @@ void printStatus(game_state_t *state, char *title) {
         }
         putchar('\n');
     }
-    free(idOrder);
+    // free(idOrder);
 }
 
 void gameEnded(game_state_t *state) {
@@ -153,12 +153,15 @@ int main() {
     shm_state_fd, 0);
     if (state == MAP_FAILED) {
         perror("mmap game_state");
+        close(shm_state_fd);
         return 1;
     }
 
     int shm_sync_fd = shm_open("/game_sync", O_RDWR, 0);
     if (shm_sync_fd == -1) {
         perror("shm_open game_sync");
+        munmap(state, sizeof(game_state_t));
+        close(shm_state_fd);
         return 1;
     }
     
@@ -167,6 +170,9 @@ int main() {
                              shm_sync_fd, 0);
     if (sync == MAP_FAILED) {
         perror("mmap game_sync");
+        close(shm_sync_fd);
+        munmap(state, sizeof(game_state_t));
+        close(shm_state_fd);
         return 1;
     }
 
@@ -191,6 +197,12 @@ int main() {
     
     gameEnded(state);
     sem_post(&sync->B);
+
+    // Limpiar recursos
+    munmap(state, sizeof(game_state_t));
+    munmap(sync, sizeof(game_sync_t));
+    close(shm_state_fd);
+    close(shm_sync_fd);
 
     return 0;
 }

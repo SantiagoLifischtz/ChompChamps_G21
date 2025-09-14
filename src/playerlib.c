@@ -15,13 +15,27 @@ static char moveMap[3][3] = {
 
 game_state_t *getState() {
     int fd = shm_open("/game_state", O_RDONLY, 0666);
+    if (fd == -1) {
+        return NULL;
+    }
     game_state_t *state = mmap(NULL, sizeof(game_state_t), PROT_READ, MAP_SHARED, fd, 0);
+    close(fd); // Close file descriptor after mapping
+    if (state == MAP_FAILED) {
+        return NULL;
+    }
     return state;
 }
 
 game_sync_t *getSync() {
     int fd = shm_open("/game_sync", O_RDWR, 0666);
+    if (fd == -1) {
+        return NULL;
+    }
     game_sync_t *sync = mmap(NULL, sizeof(game_sync_t), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    close(fd); // Close file descriptor after mapping
+    if (sync == MAP_FAILED) {
+        return NULL;
+    }
     return sync;
 }
 
@@ -125,4 +139,16 @@ int bfsExplore(game_state_t *state, unsigned short startX, unsigned short startY
     }
     if (exploredSpaces != NULL) *exploredSpaces = count;
     return totalScore;
+}
+
+void releaseState(game_state_t *state) {
+    if (state != NULL) {
+        munmap(state, sizeof(game_state_t));
+    }
+}
+
+void releaseSync(game_sync_t *sync) {
+    if (sync != NULL) {
+        munmap(sync, sizeof(game_sync_t));
+    }
 }

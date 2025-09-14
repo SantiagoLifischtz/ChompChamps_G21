@@ -5,6 +5,8 @@
 
 game_state_t *getState();
 game_sync_t *getSync();
+void releaseState(game_state_t *state);
+void releaseSync(game_sync_t *sync);
 jugador_t *getPlayer(game_state_t *state, pid_t playerPid, int *playerListIndex);
 int freeNeighborCount(game_state_t *state, unsigned short x, unsigned short y);
 char (*getMoveMap())[3];
