@@ -13,7 +13,7 @@ int main() {
     jugador_t *playerData = getPlayer(state, getpid(), &playerListIndex);
     char (*moveMap)[3] = getMoveMap();
 
-    while(1) {
+    while(!playerData->stuck) {
 
         sem_wait(&(sync->G[playerListIndex]));
 

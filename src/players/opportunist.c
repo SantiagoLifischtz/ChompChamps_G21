@@ -40,7 +40,7 @@ int main() {
     }
     char (*moveMap)[3] = getMoveMap();
 
-    while(1) {
+    while(!playerData->stuck) {
 
         sem_wait(&(sync->G[playerListIndex]));
 
