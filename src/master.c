@@ -642,6 +642,17 @@ int process_player_moves(game_state_t *state, game_sync_t *sync, int pipes[MAX_J
     return 0;
 }
 
+void printScores(game_state_t *state) {
+
+    jugador_t *players = state->jugadores;
+    printf("Final scores: \n");
+    printf("|------------------|------|\n");
+    for (size_t i = 0; i < state->num_jugadores; i++) {
+        printf("| %-16s | %4u |\n", players[i].nombre, players[i].puntaje);
+        printf("|------------------|------|\n");
+    }
+}
+
 /**
  * @brief Limpia todos los recursos utilizados por el juego
  * 
@@ -786,6 +797,11 @@ int main(int argc, char *argv[]) {
         if (config.delay > 0) {
             usleep(config.delay * 1000);
         }
+    }
+
+    // Si no hay vista, el master se encarga de imprimir los resultados
+    if (config.view_path == NULL) {
+        printScores(state);
     }
     
     // Limpiar recursos

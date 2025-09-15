@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include <structs.h>
+#include <score.h>
 
 /**
  * @brief Códigos de color para salida de terminal
@@ -129,44 +130,6 @@ void drawBoard(game_state_t *state) {
         }
         putchar('\n');
     }
-}
-
-/**
- * @brief Crea un arreglo de índices de jugadores ordenados por puntaje (mayor primero)
- * 
- * Asigna y retorna un nuevo arreglo conteniendo índices de jugadores ordenados por
- * sus puntajes en orden descendente. El llamador es responsable de liberar
- * la memoria retornada.
- * 
- * @param state Puntero al estado actual del juego
- * @return Puntero al arreglo asignado de índices de jugadores, o NULL en caso de fallo
- */
-int *getPlayerOrder(game_state_t *state) {
-    int n = state->num_jugadores;
-    int *idOrder = malloc(sizeof(int) * n);
-    if (!idOrder) return NULL;
-
-    for (int i = 0; i < n; i++) {
-        idOrder[i] = i;
-    }
-
-    // Selection Sort
-    for (int i = 0; i < n - 1; i++) {
-        int best = i;
-        for (int j = i + 1; j < n; j++) {
-            if (state->jugadores[idOrder[j]].puntaje >
-                state->jugadores[idOrder[best]].puntaje) {
-                best = j;
-            }
-        }
-        if (best != i) {
-            int tmp = idOrder[i];
-            idOrder[i] = idOrder[best];
-            idOrder[best] = tmp;
-        }
-    }
-
-    return idOrder;
 }
 
 /**
