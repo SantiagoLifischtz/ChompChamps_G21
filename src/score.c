@@ -1,11 +1,14 @@
 #include <score.h>
 
 static int comparePlayers(jugador_t j1, jugador_t j2) {
-    int cmp = j1.puntaje - j2.puntaje;
+    // 1. Mayor puntaje gana (orden descendente)
+    int cmp = j2.puntaje - j1.puntaje;
     if (cmp == 0) {
-        cmp = j2.validRequests - j1.validRequests;
+        // 2. En caso de empate, menor cantidad de movimientos válidos gana (mayor eficiencia)
+        cmp = j1.validRequests - j2.validRequests;
         if (cmp == 0) {
-            cmp = j2.invalidRequests - j1.invalidRequests;
+            // 3. Si persiste el empate, menor cantidad de movimientos inválidos gana
+            cmp = j1.invalidRequests - j2.invalidRequests;
         }
     }
     return cmp;

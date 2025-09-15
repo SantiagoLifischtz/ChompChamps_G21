@@ -29,6 +29,7 @@
 #include <sys/select.h>
 #include <signal.h>
 #include <structs.h>
+#include <score.h>
 #include <math.h>
 
 // Constantes de configuración del juego
