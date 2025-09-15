@@ -15,4 +15,6 @@
  */
 int *getPlayerOrder(game_state_t *state);
 
+int comparePlayers(jugador_t j1, jugador_t j2);
+
 #endif

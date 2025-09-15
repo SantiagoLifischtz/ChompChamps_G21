@@ -644,14 +644,19 @@ int process_player_moves(game_state_t *state, game_sync_t *sync, int pipes[MAX_J
 }
 
 void printScores(game_state_t *state) {
-
     jugador_t *players = state->jugadores;
-    printf("Final scores: \n");
+    int *idOrder = getPlayerOrder(state);
+    if (!idOrder) return;
+
+    printf("      === Results ===\n");
     printf("|------------------|------|\n");
     for (size_t i = 0; i < state->num_jugadores; i++) {
-        printf("| %-16s | %4u |\n", players[i].nombre, players[i].puntaje);
+        int id = idOrder[i];
+        printf("| %-16s | %4u |\n", players[id].nombre, players[id].puntaje);
         printf("|------------------|------|\n");
     }
+
+    free(idOrder);
 }
 
 /**

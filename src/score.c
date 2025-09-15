@@ -1,14 +1,14 @@
 #include <score.h>
 
-static int comparePlayers(jugador_t j1, jugador_t j2) {
+int comparePlayers(jugador_t j1, jugador_t j2) {
     // 1. Mayor puntaje gana (orden descendente)
-    int cmp = j2.puntaje - j1.puntaje;
+    int cmp = j1.puntaje - j2.puntaje;
     if (cmp == 0) {
         // 2. En caso de empate, menor cantidad de movimientos válidos gana (mayor eficiencia)
-        cmp = j1.validRequests - j2.validRequests;
+        cmp = j2.validRequests - j1.validRequests;
         if (cmp == 0) {
             // 3. Si persiste el empate, menor cantidad de movimientos inválidos gana
-            cmp = j1.invalidRequests - j2.invalidRequests;
+            cmp = j2.invalidRequests - j1.invalidRequests;
         }
     }
     return cmp;
@@ -27,7 +27,7 @@ int *getPlayerOrder(game_state_t *state) {
     for (int i = 0; i < n - 1; i++) {
         int best = i;
         for (int j = i + 1; j < n; j++) {
-            if (comparePlayers(state->jugadores[idOrder[j]], state->jugadores[idOrder[best]]) < 0) {
+            if (comparePlayers(state->jugadores[idOrder[j]], state->jugadores[idOrder[best]]) > 0) {
                 best = j;
             }
         }

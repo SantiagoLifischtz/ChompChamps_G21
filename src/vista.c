@@ -185,21 +185,34 @@ void gameEnded(game_state_t *state) {
     printStatus(state, "=== Game over ===");
     putchar('\n');
 
-    unsigned int maxScore = 0;
-    size_t winner = 0;
-    for (size_t i=0; i<state->num_jugadores; i++) {
-        unsigned int score = state->jugadores[i].puntaje;
-        if (score > maxScore) {
-            maxScore = score;
-            winner = i;
-        }
-    }
     printEndgameBar(state->width);
     drawBoard(state);
     printEndgameBar(state->width);
-    printf("\n=== Winner: [ %s%s\033[0m ] ===\n", 
-           (winner < 9) ? colors[winner] : "", 
-           state->jugadores[winner].nombre);
+    
+    size_t winners[state->num_jugadores];
+    size_t winnerCount = 0;
+    winners[0] = 0;
+
+    for (size_t i=0; i < state->num_jugadores; i++) {
+        jugador_t p = state->jugadores[i];
+        int cmp = comparePlayers(p,state->jugadores[winners[0]]);
+        if (cmp > 0) {
+            winners[0] = i;
+            winnerCount = 1;
+        }
+        else if (cmp == 0) {
+            winners[winnerCount++] = i;
+        }
+    }
+
+    printf("\n=== Winner%s: [ ", winnerCount > 1 ? "s" : "");
+    for (size_t i = 0; i < winnerCount; i++) {
+        int idx = winners[i];
+        char *color = idx < 9 ? colors[idx] : "";
+        printf("%s%s\033[0m", color, state->jugadores[idx].nombre);
+        if (i < winnerCount-1) printf(", ");
+    }
+    printf(" ] ===\n");
 }
 
 /**
