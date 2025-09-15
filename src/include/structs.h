@@ -30,13 +30,13 @@ typedef struct {
 } game_state_t;
 
 typedef struct {
-    sem_t A; // El máster le indica a la vista que hay cambios por imprimir
-    sem_t B; // La vista le indica al máster que terminó de imprimir
-    sem_t C; // Mutex para evitar inanición del máster al acceder al estado
-    sem_t D; // Mutex para el estado del juego
-    sem_t E; // Mutex para la siguiente variable
-    unsigned int F; // Cantidad de jugadores leyendo el estado
-    sem_t G[9]; // Le indican a cada jugador que puede enviar 1 movimiento
+    sem_t view_update_signal; // El máster le indica a la vista que hay cambios por imprimir
+    sem_t view_done_signal; // La vista le indica al máster que terminó de imprimir
+    sem_t master_access_mutex; // Mutex para evitar inanición del máster al acceder al estado
+    sem_t game_state_mutex; // Mutex para el estado del juego
+    sem_t reader_count_mutex; // Mutex para la siguiente variable
+    unsigned int active_readers_count; // Cantidad de jugadores leyendo el estado
+    sem_t player_move_token[9]; // Le indican a cada jugador que puede enviar 1 movimiento
 } game_sync_t;
 
 #endif

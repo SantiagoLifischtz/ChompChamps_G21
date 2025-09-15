@@ -23,7 +23,7 @@ int main() {
     jugador_t *playerData = getPlayer(state, getpid(), &playerListIndex);
 
     while(!playerData->stuck) {
-        sem_wait(&(sync->G[playerListIndex]));
+        sem_wait(&(sync->player_move_token[playerListIndex]));
 
         unsigned char move = randInt(0,8);
         write(STDOUT_FILENO, &move, sizeof(move));

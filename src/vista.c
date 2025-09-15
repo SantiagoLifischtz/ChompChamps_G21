@@ -268,7 +268,7 @@ int main() {
 
     // Bucle principal del juego - esperar actualizaciones del master y mostrar
     while (1) {
-        sem_wait(&sync->A);
+        sem_wait(&sync->view_update_signal);
 
         if (state->terminado) break;
         printStatus(state, "=== Leaderboard ===");
@@ -279,12 +279,12 @@ int main() {
         printAnimatedBar(state->width, frameCounter++);
         fflush(stdout);
 
-        sem_post(&sync->B);
+        sem_post(&sync->view_done_signal);
     }
     
     // El juego ha terminado - mostrar estado final
     gameEnded(state);
-    sem_post(&sync->B);
+    sem_post(&sync->view_done_signal);
 
     // Limpiar recursos
     munmap(state, sizeof(game_state_t));

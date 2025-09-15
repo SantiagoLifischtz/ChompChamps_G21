@@ -14,14 +14,14 @@ int main() {
 
     while(!playerData->stuck) {
 
-        sem_wait(&(sync->G[playerListIndex]));
+        sem_wait(&(sync->player_move_token[playerListIndex]));
 
-        sem_wait(&sync->C);
-        sem_wait(&sync->E);
-        sync->F++;
-        if (sync->F == 1) sem_wait(&sync->D);
-        sem_post(&sync->E);
-        sem_post(&sync->C);
+        sem_wait(&sync->master_access_mutex);
+        sem_wait(&sync->reader_count_mutex);
+        sync->active_readers_count++;
+        if (sync->active_readers_count == 1) sem_wait(&sync->game_state_mutex);
+        sem_post(&sync->reader_count_mutex);
+        sem_post(&sync->master_access_mutex);
 
         // Busca el lugar con mas puntaje
         int max = 0;
@@ -46,10 +46,10 @@ int main() {
             }
         }
 
-        sem_wait(&sync->E);
-        sync->F--;
-        if (sync->F == 0) sem_post(&sync->D);
-        sem_post(&sync->E);
+        sem_wait(&sync->reader_count_mutex);
+        sync->active_readers_count--;
+        if (sync->active_readers_count == 0) sem_post(&sync->game_state_mutex);
+        sem_post(&sync->reader_count_mutex);
         
         unsigned char move = moveMap[moveY+1][moveX+1];
         write(STDOUT_FILENO, &move, sizeof(move));

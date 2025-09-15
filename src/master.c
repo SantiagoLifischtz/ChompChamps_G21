@@ -385,50 +385,50 @@ int initialize_semaphores(game_sync_t *sync, int num_players) {
         return -1;
     }
     
-    if (sem_init(&sync->A, 1, 0) != 0) {
-        perror("sem_init A");
+    if (sem_init(&sync->view_update_signal, 1, 0) != 0) {
+        perror("sem_init view_update_signal");
         return -1;
     }
-    if (sem_init(&sync->B, 1, 0) != 0) {
-        perror("sem_init B");
-        sem_destroy(&sync->A);
+    if (sem_init(&sync->view_done_signal, 1, 0) != 0) {
+        perror("sem_init view_done_signal");
+        sem_destroy(&sync->view_update_signal);
         return -1;
     }
-    if (sem_init(&sync->C, 1, 1) != 0) {
-        perror("sem_init C");
-        sem_destroy(&sync->A);
-        sem_destroy(&sync->B);
+    if (sem_init(&sync->master_access_mutex, 1, 1) != 0) {
+        perror("sem_init master_access_mutex");
+        sem_destroy(&sync->view_update_signal);
+        sem_destroy(&sync->view_done_signal);
         return -1;
     }
-    if (sem_init(&sync->D, 1, 1) != 0) {
-        perror("sem_init D");
-        sem_destroy(&sync->A);
-        sem_destroy(&sync->B);
-        sem_destroy(&sync->C);
+    if (sem_init(&sync->game_state_mutex, 1, 1) != 0) {
+        perror("sem_init game_state_mutex");
+        sem_destroy(&sync->view_update_signal);
+        sem_destroy(&sync->view_done_signal);
+        sem_destroy(&sync->master_access_mutex);
         return -1;
     }
-    if (sem_init(&sync->E, 1, 1) != 0) {
-        perror("sem_init E");
-        sem_destroy(&sync->A);
-        sem_destroy(&sync->B);
-        sem_destroy(&sync->C);
-        sem_destroy(&sync->D);
+    if (sem_init(&sync->reader_count_mutex, 1, 1) != 0) {
+        perror("sem_init reader_count_mutex");
+        sem_destroy(&sync->view_update_signal);
+        sem_destroy(&sync->view_done_signal);
+        sem_destroy(&sync->master_access_mutex);
+        sem_destroy(&sync->game_state_mutex);
         return -1;
     }
     
-    sync->F = 0;
+    sync->active_readers_count = 0;
     
     for (int i = 0; i < num_players; i++) {
-        if (sem_init(&(sync->G[i]), 1, 0) != 0) {
-            perror("sem_init G");
+        if (sem_init(&(sync->player_move_token[i]), 1, 0) != 0) {
+            perror("sem_init player_move_token");
             // Limpiar semáforos ya inicializados
-            sem_destroy(&sync->A);
-            sem_destroy(&sync->B);
-            sem_destroy(&sync->C);
-            sem_destroy(&sync->D);
-            sem_destroy(&sync->E);
+            sem_destroy(&sync->view_update_signal);
+            sem_destroy(&sync->view_done_signal);
+            sem_destroy(&sync->master_access_mutex);
+            sem_destroy(&sync->game_state_mutex);
+            sem_destroy(&sync->reader_count_mutex);
             for (int j = 0; j < i; j++) {
-                sem_destroy(&(sync->G[j]));
+                sem_destroy(&(sync->player_move_token[j]));
             }
             return -1;
         }
@@ -578,9 +578,9 @@ int process_player_moves(game_state_t *state, game_sync_t *sync, int pipes[MAX_J
         }
 
         // Sincronización para acceso al estado
-        sem_wait(&sync->C);
-        sem_wait(&sync->D);
-        sem_post(&sync->C);
+        sem_wait(&sync->master_access_mutex);
+        sem_wait(&sync->game_state_mutex);
+        sem_post(&sync->master_access_mutex);
         
         unsigned short x = state->jugadores[i].x;
         unsigned short y = state->jugadores[i].y;
@@ -617,10 +617,10 @@ int process_player_moves(game_state_t *state, game_sync_t *sync, int pipes[MAX_J
                 active_players[i] = 0;
             }
         } else {
-            sem_post(&(sync->G[i]));
+            sem_post(&(sync->player_move_token[i]));
         }
 
-        sem_post(&sync->D);
+        sem_post(&sync->game_state_mutex);
     }
 
     // Verificar si el juego debe terminar
@@ -692,13 +692,13 @@ void cleanup_resources(game_state_t *state, game_sync_t *sync, pid_t *jugadores,
 
     // Destruir semáforos
     if (sync != NULL) {
-        sem_destroy(&sync->A);
-        sem_destroy(&sync->B);
-        sem_destroy(&sync->C);
-        sem_destroy(&sync->D);
-        sem_destroy(&sync->E);
+        sem_destroy(&sync->view_update_signal);
+        sem_destroy(&sync->view_done_signal);
+        sem_destroy(&sync->master_access_mutex);
+        sem_destroy(&sync->game_state_mutex);
+        sem_destroy(&sync->reader_count_mutex);
         for (int i = 0; i < num_players; i++) {
-            sem_destroy(&(sync->G[i]));
+            sem_destroy(&(sync->player_move_token[i]));
         }
     }
 
@@ -771,14 +771,14 @@ int main(int argc, char *argv[]) {
 
     // Enviar estado inicial a la vista si existe
     if (config.view_path != NULL) {
-        sem_post(&sync->A);
-        sem_wait(&sync->B);
+        sem_post(&sync->view_update_signal);
+        sem_wait(&sync->view_done_signal);
     }
 
     // Inicializar jugadores como activos
     int active_players[MAX_JUGADORES];
     for (int i = 0; i < config.num_players; i++) {
-        sem_post(&(sync->G[i]));
+        sem_post(&(sync->player_move_token[i]));
         active_players[i] = 1;
     }
 
@@ -795,8 +795,8 @@ int main(int argc, char *argv[]) {
         
         // Avisar a vista si existe
         if (config.view_path != NULL) {
-            sem_post(&sync->A);
-            sem_wait(&sync->B);
+            sem_post(&sync->view_update_signal);
+            sem_wait(&sync->view_done_signal);
         }
         
         // Delay entre movimientos

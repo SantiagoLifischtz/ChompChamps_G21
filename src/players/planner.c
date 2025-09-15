@@ -51,14 +51,14 @@ int main() {
 
     while(!playerData->stuck) {
 
-        sem_wait(&(sync->G[playerListIndex]));
+        sem_wait(&(sync->player_move_token[playerListIndex]));
 
-        sem_wait(&sync->C);
-        sem_wait(&sync->E);
-        sync->F++;
-        if (sync->F == 1) sem_wait(&sync->D);
-        sem_post(&sync->E);
-        sem_post(&sync->C);
+        sem_wait(&sync->master_access_mutex);
+        sem_wait(&sync->reader_count_mutex);
+        sync->active_readers_count++;
+        if (sync->active_readers_count == 1) sem_wait(&sync->game_state_mutex);
+        sem_post(&sync->reader_count_mutex);
+        sem_post(&sync->master_access_mutex);
 
         char ties[8][2] = {0};
         int tieIndex = 0;
@@ -82,7 +82,9 @@ int main() {
                 int freedom;
                 int potentialScore = bfsExplore(state, x, y, BFS_DEPTH, &freedom);
 
-                double rating = FREEDOM_BIAS*freedom + SCORE_BIAS*potentialScore + IMMEDIATE_FREEDOM_BIAS*immediateFreedom;
+                double rating = (double)FREEDOM_BIAS * (double)freedom +
+                                (double)SCORE_BIAS * (double)potentialScore +
+                                (double)IMMEDIATE_FREEDOM_BIAS * (double)immediateFreedom;
 
                 if (fabs(rating - max) < EPSILON) {
                     ties[tieIndex][0] = offX;
@@ -116,10 +118,10 @@ int main() {
             }
         }
 
-        sem_wait(&sync->E);
-        sync->F--;
-        if (sync->F == 0) sem_post(&sync->D);
-        sem_post(&sync->E);
+        sem_wait(&sync->reader_count_mutex);
+        sync->active_readers_count--;
+        if (sync->active_readers_count == 0) sem_post(&sync->game_state_mutex);
+        sem_post(&sync->reader_count_mutex);
         
         unsigned char move = moveMap[moveY+1][moveX+1];
         write(STDOUT_FILENO, &move, sizeof(move));
